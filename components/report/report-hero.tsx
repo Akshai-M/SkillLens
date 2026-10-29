@@ -5,11 +5,13 @@ import { isCleared, levelStatus, type Interview } from "@/lib/report/parse";
 import { ExpandableText } from "./expandable-text";
 import { Icon, type IconName } from "./ui";
 
-const VERDICT: Record<string, { className: string; note: string }> = {
-  "strong hire": { className: "text-good", note: "Strong performance across the interview" },
-  "medium hire": { className: "text-ink", note: "Solid performance with a few gaps" },
-  "low hire": { className: "text-amber", note: "Solid foundations with specific gaps" },
-};
+// Verdict band is hidden from students for now. To bring the card back, restore this map,
+// the `verdict` constant in ReportHero and the commented-out Kpi below.
+// const VERDICT: Record<string, { className: string; note: string }> = {
+//   "strong hire": { className: "text-good", note: "Strong performance across the interview" },
+//   "medium hire": { className: "text-ink", note: "Solid performance with a few gaps" },
+//   "low hire": { className: "text-amber", note: "Solid foundations with specific gaps" },
+// };
 
 /** Candidate dossier: identity, headline result tiles, executive summary and next-step callout. */
 export function ReportHero({
@@ -33,7 +35,7 @@ export function ReportHero({
   const s = interview.structured;
   const summary = s?.executiveSummary || interview.overallFeedback;
   const breakthrough = s?.nextStepFocus;
-  const verdict = VERDICT[interview.verdictBand.toLowerCase()];
+  // const verdict = VERDICT[interview.verdictBand.toLowerCase()];
   const interviewer = interview.admin?.interviewer;
 
   const meta: { icon: IconName; text: ReactNode; strong?: boolean }[] = [
@@ -122,21 +124,22 @@ export function ReportHero({
           </Kpi>
         )}
 
+        {/* Disabled for now — verdict band card for students who cleared:
         {cleared && interview.verdictBand ? (
           <Kpi label="Verdict band" note={verdict?.note}>
             <span className={`font-display text-xl font-bold sm:text-2xl ${verdict?.className ?? "text-ink"}`}>{interview.verdictBand}</span>
           </Kpi>
-        ) : (
-          <Kpi label="Areas to strengthen" note={`${focusCount === 1 ? "Domain" : "Domains"} rated 2 or below`}>
-            <span className="font-mono text-3xl font-bold tabular-nums sm:text-4xl">{focusCount}</span>
-          </Kpi>
-        )}
+        ) : ( …Areas to strengthen card… )}
+        */}
+        <Kpi label="Areas to strengthen" note={`${focusCount === 1 ? "Domain" : "Domains"} rated 2 or below`}>
+          <span className="font-mono text-3xl font-bold tabular-nums sm:text-4xl">{focusCount}</span>
+        </Kpi>
       </div>
 
       {interview.admin && (interview.admin.level || interview.admin.verdictBand) && (
         <p className="rounded-md border border-dashed border-line px-3 py-2 font-mono text-xs text-muted">
           Admin · recorded level {interview.admin.level || "—"} · band {interview.admin.verdictBand || "—"}
-          {!cleared && " (hidden from the student)"}
+          {cleared ? " (band hidden from the student)" : " (both hidden from the student)"}
         </p>
       )}
 
