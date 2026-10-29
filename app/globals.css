@@ -1,26 +1,76 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light slate palette, matching the report design reference. */
+  color-scheme: light;
+  --canvas: #f8fafc;
+  --surface: #ffffff;
+  --sunken: #f8fafc;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --accent: #0f172a;
+  --accent-strong: #1e293b;
+  --accent-soft: #f1f5f9;
+  --on-accent: #ffffff;
+  --good: #047857;
+  --good-soft: #ecfdf5;
+  --good-bar: #059669;
+  --warn: #b45309;
+  --warn-soft: #fffbeb;
+  --warn-bar: #d97706;
+  --bad: #be123c;
+  --bad-soft: #fff1f2;
+  --bad-bar: #e11d48;
+  --amber: #78350f;
+  --amber-soft: #fffbeb;
+  --amber-line: #fde68a;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-good-bar: var(--good-bar);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-warn-bar: var(--warn-bar);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-bad-bar: var(--bad-bar);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-amber-line: var(--amber-line);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-geist-sans);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+  .print-page-break {
+    break-before: page;
+  }
+  .print-avoid-break {
+    break-inside: avoid;
+  }
 }
