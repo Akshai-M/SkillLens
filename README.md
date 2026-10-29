@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SkillLens — Technical Interview Reports
 
-## Getting Started
+Students sign in with their email and see feedback from their technical interviews,
+one page per competency:
 
-First, run the development server:
+- Frontend Development
+- Programming with Problem Solving (DSA)
+- Backend Development
+- Software Engineering Fundamentals
+
+Admins can look up any student at `/admin` and see internal audit notes.
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
+cp .env.example .env   # then fill in the values
+bun dev                # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Purpose |
+| --- | --- |
+| `SHEETS_API_URL` | Apps Script `/exec` URL. The app adds `?email=…&sheets=…` per request. |
+| `SESSION_SECRET` | Long random string used to sign session cookies. |
+| `ADMIN_PASSWORD` | Password for the `/admin` dashboard. |
+| `REPORT_REQUIRE_SHARED` | `true` hides a result until "Result shared with students status" is filled in. |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Generate a secret with `openssl rand -hex 32`.
 
-## Learn More
+## Production
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+bun run build
+bun run start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Set the environment variables above on the host. They are never committed.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How data flows
 
-## Deploy on Vercel
+- The sheet API is called only on sign-in and when a student presses **Refetch**.
+  The result is cached in the student's browser (localStorage) and every page renders from it.
+- Before data reaches the browser, the server removes:
+  - interviewer names, recording and transcript links, and audit fields
+  - the JSON report's `internal_only` notes
+  - feedback that hasn't been released yet
+  - level and verdict band for students who didn't clear
+- `/admin` fetches the full, unfiltered data on demand and never stores it in the browser.
+- Reports can be downloaded as a PDF from each competency page.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project layout
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `lib/competencies.ts`: competencies, sheet tabs, skills, rubrics, level ladders
+- `lib/sheets.ts`: Apps Script fetch, sanitising, de-duplication
+- `lib/report/`: parsing, structured-report normalising, browser store, PDF export
+- `components/report/`: report UI (dossier, tabs, plan, audit)
+- `app/`: routes (login, dashboard, one page per competency, admin)
