@@ -71,6 +71,17 @@ export function ReportHero({
             <span className="size-2 rounded-full bg-good-bar" aria-hidden />
             <span className="font-medium text-ink">Official Evaluation Report</span>
           </p>
+          {/* Placement Pool is shown only to students who cleared, for now. To also show it to
+              students who didn't clear, swap `cleared &&` back to `interview.clearance &&`. */}
+          {cleared && (
+            <p className="text-muted">
+              Placement Pool:{" "}
+              <span className={interview.placementEligible ? "font-semibold text-good" : "text-slate-700"}>
+                {interview.placementEligible ? "Eligible" : "Not Eligible"}
+              </span>
+            </p>
+          )}
+          {/* Disabled for now — Placement Pool for every graded attempt, including not cleared:
           {interview.clearance && (
             <p className="text-muted">
               Placement Pool:{" "}
@@ -79,6 +90,7 @@ export function ReportHero({
               </span>
             </p>
           )}
+          */}
         </div>
       </div>
 
