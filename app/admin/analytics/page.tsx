@@ -147,17 +147,12 @@ async function Dashboard({ filters }: { filters: AnalyticsFilters }) {
 
       {/* 4. Feedback reports */}
       <Section title="Feedback report analytics" >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Stat label="Reports published" value={a.reports.published} hint={`${a.reports.publishedInRange} in this range`} />
           <Stat label="Report views" value={a.reports.views} hint="In this range" />
           <Stat label="Students who viewed" value={a.reports.uniqueViewers} hint="In this range" />
           <Stat label="Haven't viewed yet" value={a.reports.notViewedStudents.length} hint="Signed in, but never opened a published report" />
           <Stat label="Repeat views" value={a.reports.repeatViews} hint={`${a.reports.studentsWithRepeats} students reopened a report`} />
-          <Stat
-            label="Publish → first view"
-            value={a.reports.avgHoursToFirstView == null ? "—" : `${formatNumber(a.reports.avgHoursToFirstView, 1)}h`}
-            hint="Average, from feedback submission"
-          />
           <Stat label="Avg viewing time" value={formatDuration(a.reports.avgViewMs)} hint="Per report view" />
         </div>
         <h3 className="mb-3 mt-6 text-sm font-semibold">Most viewed reports</h3>

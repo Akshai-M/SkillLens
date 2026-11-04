@@ -86,7 +86,6 @@ export type Analytics = {
     notViewedStudents: string[];
     repeatViews: number;
     studentsWithRepeats: number;
-    avgHoursToFirstView: number | null;
     avgViewMs: number;
     mostViewed: ReportStat[];
     perReport: ReportStat[];
@@ -411,9 +410,6 @@ export async function getAnalytics(filters: AnalyticsFilters): Promise<Analytics
 
   const viewedEmails = new Set(perReport.filter((r) => r.views > 0 && published.has(r.key)).map((r) => r.email));
   const studentsWithPublished = new Set(roster.reports.map((r) => r.email));
-  const delays = perReport
-    .filter((r) => r.publishedAt != null && r.firstView != null && r.firstView >= r.publishedAt)
-    .map((r) => (r.firstView! - r.publishedAt!) / (60 * 60 * 1000));
   const totalViews = perReport.reduce((t, r) => t + r.views, 0);
   const totalViewMs = perReport.reduce((t, r) => t + r.avgViewMs * r.views, 0);
   const reports = {
@@ -424,7 +420,6 @@ export async function getAnalytics(filters: AnalyticsFilters): Promise<Analytics
     notViewedStudents: [...studentsWithPublished].filter((e) => !viewedEmails.has(e)).sort(),
     repeatViews: perReport.reduce((t, r) => t + Math.max(0, r.views - 1), 0),
     studentsWithRepeats: new Set(perReport.filter((r) => r.views > 1).map((r) => r.email)).size,
-    avgHoursToFirstView: delays.length ? delays.reduce((t, h) => t + h, 0) / delays.length : null,
     avgViewMs: totalViews ? totalViewMs / totalViews : 0,
     mostViewed: perReport.filter((r) => r.views > 0).slice(0, 10),
     perReport,
