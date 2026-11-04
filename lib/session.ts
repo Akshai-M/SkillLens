@@ -5,7 +5,8 @@ import { cookies } from "next/headers";
 const COOKIE_NAME = "cr_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
-export type Session = { email: string; name: string; exp: number };
+/** `id` is the analytics student ID; sessions created before analytics existed don't have it. */
+export type Session = { email: string; name: string; exp: number; id?: string };
 
 function secret(): string {
   const s = process.env.SESSION_SECRET;
@@ -53,8 +54,8 @@ export async function readSession(): Promise<Session | null> {
   return getSession();
 }
 
-export async function createSession(email: string, name: string): Promise<void> {
-  const token = encode({ email, name, exp: Date.now() + MAX_AGE_SECONDS * 1000 });
+export async function createSession(email: string, name: string, id?: string): Promise<void> {
+  const token = encode({ email, name, id, exp: Date.now() + MAX_AGE_SECONDS * 1000 });
   (await cookies()).set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -73,7 +74,18 @@ export async function destroySession(): Promise<void> {
 const ADMIN_COOKIE = "cr_admin";
 const ADMIN_MAX_AGE_SECONDS = 60 * 60 * 12;
 
-type AdminSession = { admin: true; exp: number };
+/**
+ * viewer: look up student reports only.
+ * full:   student reports plus user analytics.
+ */
+export type AdminRole = "viewer" | "full";
+
+type AdminSession = { admin: true; role: AdminRole; exp: number };
+
+const ADMIN_ACCOUNTS: { role: AdminRole; userVar: string; passVar: string }[] = [
+  { role: "full", userVar: "ADMIN_USERNAME", passVar: "ADMIN_PASSWORD" },
+  { role: "viewer", userVar: "ADMIN_VIEWER_USERNAME", passVar: "ADMIN_VIEWER_PASSWORD" },
+];
 
 function decodeAdmin(token: string): AdminSession | null {
   const [payload, sig] = token.split(".");
@@ -83,23 +95,39 @@ function decodeAdmin(token: string): AdminSession | null {
   if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
   try {
     const session = JSON.parse(Buffer.from(payload, "base64url").toString()) as AdminSession;
-    return session.admin === true && session.exp > Date.now() ? session : null;
+    const validRole = session.role === "viewer" || session.role === "full";
+    return session.admin === true && validRole && session.exp > Date.now() ? session : null;
   } catch {
     return null;
   }
 }
 
-/** Constant-time check of the password against ADMIN_PASSWORD. */
-export function checkAdminPassword(password: string): boolean {
-  const expected = process.env.ADMIN_PASSWORD;
-  if (!expected || expected.length < 8) return false;
-  const a = createHmac("sha256", secret()).update(password).digest();
+function sameSecret(given: string, expected: string): boolean {
+  const a = createHmac("sha256", secret()).update(given).digest();
   const b = createHmac("sha256", secret()).update(expected).digest();
   return timingSafeEqual(a, b);
 }
 
-export async function createAdminSession(): Promise<void> {
-  const payload = Buffer.from(JSON.stringify({ admin: true, exp: Date.now() + ADMIN_MAX_AGE_SECONDS * 1000 })).toString("base64url");
+/** Role for a username/password pair from the env-configured admin accounts, or null. */
+export function checkAdminCredentials(username: string, password: string): AdminRole | null {
+  for (const account of ADMIN_ACCOUNTS) {
+    const user = process.env[account.userVar];
+    const pass = process.env[account.passVar];
+    if (!user || !pass || pass.length < 8) continue;
+    // Check both fields every time so timing doesn't reveal which one was wrong.
+    const userOk = sameSecret(username.trim().toLowerCase(), user.trim().toLowerCase());
+    const passOk = sameSecret(password, pass);
+    if (userOk && passOk) return account.role;
+  }
+  return null;
+}
+
+export function adminAccountsConfigured(): boolean {
+  return ADMIN_ACCOUNTS.some((a) => process.env[a.userVar] && process.env[a.passVar]);
+}
+
+export async function createAdminSession(role: AdminRole): Promise<void> {
+  const payload = Buffer.from(JSON.stringify({ admin: true, role, exp: Date.now() + ADMIN_MAX_AGE_SECONDS * 1000 })).toString("base64url");
   (await cookies()).set(ADMIN_COOKIE, `${payload}.${sign(`admin:${payload}`)}`, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -109,17 +137,17 @@ export async function createAdminSession(): Promise<void> {
   });
 }
 
-/** For Server Actions. */
-export async function isAdmin(): Promise<boolean> {
+/** Signed-in admin's role, or null. For Server Actions and request-time code. */
+export async function getAdminRole(): Promise<AdminRole | null> {
   const token = (await cookies()).get(ADMIN_COOKIE)?.value;
-  return Boolean(token && decodeAdmin(token));
+  return (token && decodeAdmin(token)?.role) || null;
 }
 
 /** For rendering (see readSession for why this is a private cache scope). */
-export async function readIsAdmin(): Promise<boolean> {
+export async function readAdminRole(): Promise<AdminRole | null> {
   "use cache: private";
   cacheLife("minutes");
-  return isAdmin();
+  return getAdminRole();
 }
 
 export async function destroyAdminSession(): Promise<void> {

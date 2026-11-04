@@ -1,6 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { adminLogin, type AdminLoginState } from "../actions";
 
 export function AdminLoginForm() {
@@ -8,10 +12,23 @@ export function AdminLoginForm() {
   return (
     <form action={action} className="space-y-4">
       <div className="space-y-1.5">
-        <label htmlFor="password" className="block text-sm font-medium">
-          Admin password
-        </label>
-        <input
+        <Label htmlFor="username">Username</Label>
+        <Input
+          id="username"
+          name="username"
+          type="text"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          required
+          aria-invalid={Boolean(state.error)}
+          aria-describedby={state.error ? "admin-error" : undefined}
+          className="h-10"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="password">Password</Label>
+        <Input
           id="password"
           name="password"
           type="password"
@@ -19,7 +36,7 @@ export function AdminLoginForm() {
           required
           aria-invalid={Boolean(state.error)}
           aria-describedby={state.error ? "admin-error" : undefined}
-          className="block w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/15"
+          className="h-10"
         />
       </div>
       {state.error && (
@@ -27,13 +44,10 @@ export function AdminLoginForm() {
           {state.error}
         </p>
       )}
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-accent px-4 py-2.5 font-medium text-on-accent hover:bg-accent-strong disabled:opacity-60"
-      >
-        {pending ? "Signing in…" : "Sign in"}
-      </button>
+      <Button type="submit" disabled={pending} size="lg" className="w-full">
+        {pending && <Spinner />}
+        {pending ? "Signing in" : "Sign in"}
+      </Button>
     </form>
   );
 }
