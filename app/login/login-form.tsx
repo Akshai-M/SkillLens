@@ -2,6 +2,10 @@
 
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { saveReport } from "@/lib/report/store";
 import { login, type LoginState } from "../actions";
 
@@ -21,10 +25,8 @@ export function LoginForm() {
   return (
     <form action={action} className="space-y-4">
       <div className="space-y-1.5">
-        <label htmlFor="identifier" className="block text-sm font-medium text-ink">
-          Email address
-        </label>
-        <input
+        <Label htmlFor="identifier">Email address</Label>
+        <Input
           id="identifier"
           name="identifier"
           type="email"
@@ -34,7 +36,7 @@ export function LoginForm() {
           required
           aria-invalid={Boolean(state.error)}
           aria-describedby={state.error ? "login-error" : undefined}
-          className="block w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25"
+          className="h-10"
         />
       </div>
 
@@ -44,13 +46,10 @@ export function LoginForm() {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-accent px-4 py-2.5 font-medium text-on-accent transition hover:bg-accent-strong disabled:opacity-60"
-      >
-        {pending ? "Fetching your results…" : "View my report"}
-      </button>
+      <Button type="submit" disabled={pending} size="lg" className="w-full">
+        {pending && <Spinner />}
+        {pending ? "Fetching your results" : "View my report"}
+      </Button>
     </form>
   );
 }

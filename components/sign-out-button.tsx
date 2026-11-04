@@ -2,6 +2,7 @@
 
 import { LogOut } from "lucide-react";
 import { logout } from "@/app/actions";
+import { Button } from "@/components/ui/button";
 import { clearReport } from "@/lib/report/store";
 
 export function SignOutButton() {
@@ -12,14 +13,10 @@ export function SignOutButton() {
         await logout();
       }}
     >
-      <button
-        type="submit"
-        aria-label="Sign out"
-        className="inline-flex items-center gap-1.5 rounded-md border border-line p-2 text-sm text-ink hover:bg-canvas sm:px-3 sm:py-1.5"
-      >
-        <LogOut aria-hidden className="size-4 sm:hidden" />
+      <Button type="submit" variant="outline" size="sm" aria-label="Sign out" className="max-sm:size-8 max-sm:px-0">
+        <LogOut aria-hidden />
         <span className="hidden sm:inline">Sign out</span>
-      </button>
+      </Button>
     </form>
   );
 }
