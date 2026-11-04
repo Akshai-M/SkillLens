@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Interview Report",
+  title: "Competency Technical Interview Report",
   description: "Your technical interview feedback report",
 };
 
