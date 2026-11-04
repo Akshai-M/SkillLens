@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ReportDomain, StructuredFeedback } from "@/lib/report/parse";
+import { Button } from "@/components/ui/button";
 import { ExpandableText } from "./expandable-text";
 import { Icon, SegmentBar, TONE_BAR, TONE_TEXT, domainIcon, statusFor } from "./ui";
 
@@ -32,13 +33,9 @@ export function SummaryTab({
               Targeted drills covering {feedback.weeklyPlan.map((w) => w.focus.charAt(0).toLowerCase() + w.focus.slice(1)).filter(Boolean).join(", ")}.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onOpenPlan}
-            className="inline-flex shrink-0 items-center gap-1.5 self-start whitespace-nowrap rounded bg-accent px-4 py-2 text-xs font-medium text-on-accent hover:bg-accent-strong sm:self-center"
-          >
-            Open Roadmap &amp; Checklist <Icon name="arrowRight" className="size-3.5" />
-          </button>
+          <Button type="button" size="sm" onClick={onOpenPlan} className="self-start sm:self-center">
+            Open Roadmap &amp; Checklist <Icon name="arrowRight" />
+          </Button>
         </div>
       )}
     </div>
@@ -53,11 +50,11 @@ function CompetencyScorecard({ domains, selected, onSelect }: { domains: ReportD
       <div className="flex flex-col justify-between gap-2 border-b border-line pb-3 sm:flex-row sm:items-center">
         <div>
           <h2 className="font-display text-base font-semibold">Competency Radar &amp; Domain Breakdown</h2>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-subtle">
             {domains.length} core evaluated dimensions {blurb}
           </p>
         </div>
-        <ul className="flex flex-wrap items-center gap-3 text-xs text-muted">
+        <ul className="flex flex-wrap items-center gap-3 text-xs text-subtle">
           <Legend tone="good" label="Strong (4-5)" />
           <Legend tone="warn" label="Partly (3)" />
           <Legend tone="bad" label="Remediate (0-2)" />
@@ -72,9 +69,9 @@ function CompetencyScorecard({ domains, selected, onSelect }: { domains: ReportD
           const footer =
             d.concepts.length > 0
               ? `${d.concepts.length} Tested ${d.concepts.length === 1 ? "Concept" : "Concepts"}`
-              : d.topics.length > 0
-                ? `${d.topics.length} ${d.topics.length === 1 ? "Topic" : "Topics"} Discussed`
-                : "Problem Breakdown";
+              : // Topics discussed is hidden for now. To show the count again, restore:
+                // d.topics.length > 0 ? `${d.topics.length} ${d.topics.length === 1 ? "Topic" : "Topics"} Discussed` :
+                "Problem Breakdown";
           return (
             <button
               key={key}
@@ -87,18 +84,18 @@ function CompetencyScorecard({ domains, selected, onSelect }: { domains: ReportD
               <div className="w-full">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                   <span className="flex min-w-0 flex-1 basis-40 items-center gap-2">
-                    <span className="rounded bg-accent-soft p-1 text-slate-700">
+                    <span className="rounded bg-brand-soft p-1 text-slate-700">
                       <Icon name={domainIcon(`${d.id} ${d.name}`)} className="size-4" />
                     </span>
                     <span className="line-clamp-2 text-xs font-semibold">
-                      {d.tag && <span className="mr-1 text-muted">{d.tag}</span>}
+                      {d.tag && <span className="mr-1 text-subtle">{d.tag}</span>}
                       {d.name}
                     </span>
                   </span>
                   <span className={`shrink-0 text-xs font-medium ${TONE_TEXT[status.tone]}`}>{status.label}</span>
                 </div>
                 <div className="mb-1 mt-3 flex items-baseline justify-between">
-                  <span className="text-xs text-muted">Domain Rating</span>
+                  <span className="text-xs text-subtle">Domain Rating</span>
                   <span className="flex items-center gap-1">
                     <span className="font-mono text-base font-bold tabular-nums">{d.rating ?? "—"}</span>
                     <span className="text-xs text-slate-400">/ 5</span>
@@ -107,7 +104,7 @@ function CompetencyScorecard({ domains, selected, onSelect }: { domains: ReportD
                 <SegmentBar rating={d.rating} tone={status.tone} className="my-2" />
                 {d.summary && <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-600">{d.summary}</p>}
               </div>
-              <div className="mt-4 flex w-full items-center justify-between border-t border-slate-100 pt-3 text-xs text-muted">
+              <div className="mt-4 flex w-full items-center justify-between border-t border-slate-100 pt-3 text-xs text-subtle">
                 <span>{footer}</span>
                 <span className="inline-flex items-center gap-1 font-medium text-ink">
                   Drill down <Icon name="arrowRight" className="size-3 transition-transform group-hover:translate-x-0.5" />
@@ -136,7 +133,7 @@ function OverallSummary({ feedback }: { feedback: StructuredFeedback }) {
       {feedback.evaluationSummary && (
         <div data-pdf-block className="rounded-lg border border-line bg-white p-4 sm:p-7">
           <h2 className="font-display text-base font-semibold tracking-tight">Holistic Evaluation Summary</h2>
-          <p className="mb-3 text-xs text-muted">A walk-through of how each part of your interview went, from start to finish.</p>
+          <p className="mb-3 text-xs text-subtle">A walk-through of how each part of your interview went, from start to finish.</p>
           <div className="text-sm leading-relaxed text-slate-700 sm:text-base">
             <ExpandableText text={feedback.evaluationSummary} lines={6} />
           </div>
@@ -157,7 +154,7 @@ function OverallSummary({ feedback }: { feedback: StructuredFeedback }) {
               <h3 className="flex items-center gap-2 font-display text-base font-semibold">
                 <Icon name="list" className="size-5 text-slate-700" /> Prioritized Candidate Action Items
               </h3>
-              <p className="mt-0.5 text-xs text-muted">Specific tactical habits to incorporate into daily practice</p>
+              <p className="mt-0.5 text-xs text-subtle">Specific tactical habits to incorporate into daily practice</p>
             </div>
             <CopyButton
               label="Copy Action Items"
@@ -203,8 +200,10 @@ function ListCard({ icon, iconClass, title, items, dot }: { icon: "check" | "ale
 export function CopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <button
+    <Button
       type="button"
+      variant="secondary"
+      size="sm"
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(text);
@@ -214,19 +213,19 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
           setCopied(false);
         }
       }}
-      className="no-print inline-flex shrink-0 items-center gap-1.5 self-start whitespace-nowrap rounded bg-accent-soft px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 sm:self-auto"
+      className="no-print self-start sm:self-auto"
     >
       {copied ? (
         <>
-          <Icon name="tick" className="size-3.5 text-good-bar" />
+          <Icon name="tick" className="text-good-bar" />
           <span className="font-medium text-good">Copied to Clipboard</span>
         </>
       ) : (
         <>
-          <Icon name="copy" className="size-3.5 text-muted" />
+          <Icon name="copy" className="text-subtle" />
           {label}
         </>
       )}
-    </button>
+    </Button>
   );
 }

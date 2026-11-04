@@ -2,8 +2,9 @@ import { Fragment, type ReactNode } from "react";
 import type { Competency } from "@/lib/competencies";
 import { formatDate } from "@/lib/report/fields";
 import { isCleared, levelStatus, type Interview } from "@/lib/report/parse";
+import { Button } from "@/components/ui/button";
 import { ExpandableText } from "./expandable-text";
-import { Icon, type IconName } from "./ui";
+import { AdminOnlyBadge, Icon, type IconName } from "./ui";
 
 // Verdict band is hidden from students for now. To bring the card back, restore this map,
 // the `verdict` constant in ReportHero and the commented-out Kpi below.
@@ -42,14 +43,16 @@ export function ReportHero({
     { icon: "book", text: competency.title, strong: true },
     { icon: "mail", text: email },
     { icon: "calendar", text: `${formatDate(interview.date)}${interview.time ? `, ${interview.time}` : ""}` },
-    ...(interviewer ? [{ icon: "user" as const, text: `Interviewer: ${interviewer}` }] : []),
+    ...(interviewer
+      ? [{ icon: "user" as const, text: <span className="inline-flex flex-wrap items-center gap-1.5">Interviewer: {interviewer} <AdminOnlyBadge compact /></span> }]
+      : []),
   ];
 
   return (
     <section data-pdf-block className="space-y-6 rounded-lg border border-line bg-white p-4 sm:p-8">
       <div className="flex flex-col gap-6 border-b border-line pb-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-2">
-          {interview.uid && <p className="break-all font-mono text-xs text-muted">ID {interview.uid}</p>}
+          {interview.uid && <p className="break-all font-mono text-xs text-subtle">ID {interview.uid}</p>}
           <h1 className="break-words font-display text-2xl font-bold tracking-tight sm:text-3xl">{name}</h1>
           <ul className="flex flex-col gap-1.5 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
             {meta.map((m, i) => (
@@ -60,7 +63,7 @@ export function ReportHero({
                   </li>
                 )}
                 <li className={`inline-flex items-center gap-1.5 ${m.strong ? "font-medium text-slate-800" : ""}`}>
-                  <Icon name={m.icon} className={`size-4 shrink-0 ${m.strong ? "text-muted" : "text-slate-400"}`} />
+                  <Icon name={m.icon} className={`size-4 shrink-0 ${m.strong ? "text-subtle" : "text-slate-400"}`} />
                   <span className="break-all">{m.text}</span>
                 </li>
               </Fragment>
@@ -76,7 +79,7 @@ export function ReportHero({
           {/* Placement Pool is shown only to students who cleared, for now. To also show it to
               students who didn't clear, swap `cleared &&` back to `interview.clearance &&`. */}
           {cleared && (
-            <p className="text-muted">
+            <p className="text-subtle">
               Placement Pool:{" "}
               <span className={interview.placementEligible ? "font-semibold text-good" : "text-slate-700"}>
                 {interview.placementEligible ? "Eligible" : "Not Eligible"}
@@ -85,7 +88,7 @@ export function ReportHero({
           )}
           {/* Disabled for now — Placement Pool for every graded attempt, including not cleared:
           {interview.clearance && (
-            <p className="text-muted">
+            <p className="text-subtle">
               Placement Pool:{" "}
               <span className={cleared && interview.placementEligible ? "font-semibold text-good" : "text-slate-700"}>
                 {cleared && interview.placementEligible ? "Eligible" : "Not Eligible"}
@@ -106,7 +109,7 @@ export function ReportHero({
           label="Clearance status"
           note={interview.clearance ? (cleared ? undefined : "You can retake this interview") : "Result pending"}
         >
-          <span className={`font-display text-xl font-bold sm:text-2xl ${!interview.clearance ? "text-muted" : cleared ? "text-good" : "text-bad"}`}>
+          <span className={`font-display text-xl font-bold sm:text-2xl ${!interview.clearance ? "text-subtle" : cleared ? "text-good" : "text-bad"}`}>
             {interview.clearance ? (cleared ? "Cleared" : "Not Cleared") : "Pending"}
           </span>
           {interview.clearance && (
@@ -137,9 +140,12 @@ export function ReportHero({
       </div>
 
       {interview.admin && (interview.admin.level || interview.admin.verdictBand) && (
-        <p className="rounded-md border border-dashed border-line px-3 py-2 font-mono text-xs text-muted">
-          Admin · recorded level {interview.admin.level || "—"} · band {interview.admin.verdictBand || "—"}
-          {cleared ? " (band hidden from the student)" : " (both hidden from the student)"}
+        <p className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-amber-line bg-amber-soft/40 px-3 py-2 font-mono text-xs text-subtle">
+          <AdminOnlyBadge compact />
+          <span>
+            Recorded level {interview.admin.level || "—"} · band {interview.admin.verdictBand || "—"}
+            {cleared ? " (band hidden from the student)" : " (both hidden from the student)"}
+          </span>
         </p>
       )}
 
@@ -147,9 +153,9 @@ export function ReportHero({
         <div className="space-y-3 rounded-md border border-line bg-slate-50/70 p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide">Interviewer Executive Summary</h2>
-            {interviewer && <span className="text-xs text-muted">{interviewer} · Interviewer</span>}
+            {interviewer && <span className="text-xs text-subtle">{interviewer} · Interviewer</span>}
           </div>
-          <p className="-mt-1 text-xs text-muted">Your interviewer&apos;s short take on how you did overall and the main thing to work on next.</p>
+          <p className="-mt-1 text-xs text-subtle">Your interviewer&apos;s short take on how you did overall and the main thing to work on next.</p>
           <div className="leading-relaxed text-slate-700 sm:text-base">
             <ExpandableText text={`“${summary}”`} lines={5} />
           </div>
@@ -165,13 +171,14 @@ export function ReportHero({
             <p className="text-sm font-medium text-amber-950">{breakthrough}</p>
           </div>
           {onOpenPlan && (
-            <button
+            <Button
               type="button"
+              size="sm"
               onClick={onOpenPlan}
-              className="no-print inline-flex shrink-0 items-center gap-1.5 self-start whitespace-nowrap rounded bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber hover:bg-amber-200 sm:self-center"
+              className="no-print self-start bg-amber-100 text-amber hover:bg-amber-200 sm:self-center"
             >
-              View Remediation Plan <Icon name="arrowUpRight" className="size-3.5" />
-            </button>
+              View Remediation Plan <Icon name="arrowUpRight" />
+            </Button>
           )}
         </div>
       )}
@@ -182,7 +189,7 @@ export function ReportHero({
 function Kpi({ label, note, children }: { label: string; note?: string; children: ReactNode }) {
   return (
     <div className="rounded-md border border-line/80 bg-slate-50 p-4">
-      <p className="text-xs font-medium uppercase tracking-wider text-muted">{label}</p>
+      <p className="text-xs font-medium uppercase tracking-wider text-subtle">{label}</p>
       <div className="mt-2 flex items-baseline gap-1.5">{children}</div>
       {note && <p className="mt-2 text-xs text-slate-600">{note}</p>}
     </div>

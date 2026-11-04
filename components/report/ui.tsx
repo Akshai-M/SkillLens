@@ -43,9 +43,9 @@ import {
 
 export type Tone = "good" | "warn" | "bad" | "muted";
 
-export const TONE_TEXT: Record<Tone, string> = { good: "text-good", warn: "text-warn", bad: "text-bad", muted: "text-muted" };
-export const TONE_BAR: Record<Tone, string> = { good: "bg-good-bar", warn: "bg-warn-bar", bad: "bg-bad-bar", muted: "bg-muted" };
-export const TONE_SOFT: Record<Tone, string> = { good: "bg-good-soft", warn: "bg-warn-soft", bad: "bg-bad-soft", muted: "bg-accent-soft" };
+export const TONE_TEXT: Record<Tone, string> = { good: "text-good", warn: "text-warn", bad: "text-bad", muted: "text-subtle" };
+export const TONE_BAR: Record<Tone, string> = { good: "bg-good-bar", warn: "bg-warn-bar", bad: "bg-bad-bar", muted: "bg-subtle" };
+export const TONE_SOFT: Record<Tone, string> = { good: "bg-good-soft", warn: "bg-warn-soft", bad: "bg-bad-soft", muted: "bg-brand-soft" };
 
 const STATUS: Record<string, { label: string; tone: Tone }> = {
   strong: { label: "Strong Mastery", tone: "good" },
@@ -110,7 +110,7 @@ export function SectionTitle({ title, subtitle, action }: { title: ReactNode; su
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h2 className="font-display text-base font-semibold">{title}</h2>
-        {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-subtle">{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -118,7 +118,7 @@ export function SectionTitle({ title, subtitle, action }: { title: ReactNode; su
 }
 
 export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <p className={`text-xs font-semibold uppercase tracking-[0.08em] text-muted ${className}`}>{children}</p>;
+  return <p className={`text-xs font-semibold uppercase tracking-[0.08em] text-subtle ${className}`}>{children}</p>;
 }
 
 export function Bullets({ items, tone }: { items: string[]; tone: Tone }) {
@@ -139,7 +139,7 @@ export function NumberedList({ items }: { items: string[] }) {
     <ol className="space-y-2.5">
       {items.map((item, i) => (
         <li key={i} className="flex gap-3 leading-relaxed">
-          <span className="w-5 shrink-0 font-mono text-sm text-muted">{i + 1}.</span>
+          <span className="w-5 shrink-0 font-mono text-sm text-subtle">{i + 1}.</span>
           <span>{item}</span>
         </li>
       ))}
@@ -151,7 +151,7 @@ export function NumberedList({ items }: { items: string[] }) {
 export function TaggedTitle({ title, tag }: { title: string; tag?: string }) {
   return (
     <>
-      {tag && <span className="mr-1.5 rounded bg-accent-soft px-1.5 py-0.5 align-[2px] text-[11px] font-medium text-muted">{tag}</span>}
+      {tag && <span className="mr-1.5 rounded bg-brand-soft px-1.5 py-0.5 align-[2px] text-[11px] font-medium text-subtle">{tag}</span>}
       {title}
     </>
   );
@@ -222,8 +222,20 @@ export function domainIcon(idOrName: string): IconName {
 
 export function IconBox({ name }: { name: IconName }) {
   return (
-    <span className="grid size-9 shrink-0 place-items-center rounded bg-accent-soft text-slate-700">
+    <span className="grid size-9 shrink-0 place-items-center rounded bg-brand-soft text-slate-700">
       <Icon name={name} className="size-5" />
+    </span>
+  );
+}
+
+/** Marks fields that only admins can see; students never get this data. */
+export function AdminOnlyBadge({ compact = false, className = "" }: { compact?: boolean; className?: string }) {
+  return (
+    <span
+      title="Only visible to admins. Students don't see this."
+      className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-amber-line bg-amber-soft px-2 py-0.5 font-sans text-[11px] font-semibold uppercase tracking-wider text-amber ${className}`}
+    >
+      <Icon name="shield" className="size-3" /> {compact ? "Admin only" : "Only visible to admins"}
     </span>
   );
 }

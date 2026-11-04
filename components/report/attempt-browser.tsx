@@ -1,10 +1,13 @@
 "use client";
 
+import { Clock, History as HistoryIcon, Trophy, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import type { Competency } from "@/lib/competencies";
 import { formatDate } from "@/lib/report/fields";
 import { bestAttempt, isCleared, isScored, type Interview } from "@/lib/report/parse";
+import { Button } from "@/components/ui/button";
 import { ReportView } from "./report-view";
+import { AdminOnlyBadge } from "./ui";
 
 type View = "best" | "latest" | "history";
 
@@ -24,7 +27,8 @@ export function AttemptBrowser({
   email: string;
   actionsSlot?: HTMLElement | null;
 }) {
-  const [view, setView] = useState<View>("best");
+  // The most recent attempt opens by default.
+  const [view, setView] = useState<View>("latest");
   const [selected, setSelected] = useState<string | null>(null);
 
   const latest = attempts[0];
@@ -33,16 +37,16 @@ export function AttemptBrowser({
   const shown = view === "best" ? best : view === "latest" ? latest : picked;
   const isAdmin = Boolean(latest?.admin);
 
-  const views: { id: View; label: string }[] = [
-    { id: "best", label: "Best" },
-    { id: "latest", label: "Latest" },
-    { id: "history", label: `History (${attempts.length})` },
+  const views: { id: View; label: string; icon: LucideIcon }[] = [
+    { id: "latest", label: "Latest", icon: Clock },
+    { id: "best", label: "Best", icon: Trophy },
+    { id: "history", label: `History (${attempts.length})`, icon: HistoryIcon },
   ];
 
   return (
     <div className="space-y-6">
       <div className="no-print flex flex-wrap items-center gap-3">
-        <div role="group" aria-label="Choose attempt" className="flex gap-1 rounded-xl bg-accent-soft p-1">
+        <div role="group" aria-label="Choose attempt" className="flex gap-1 rounded-xl bg-brand-soft p-1">
           {views.map((v) => {
             const active = view === v.id;
             return (
@@ -54,8 +58,9 @@ export function AttemptBrowser({
                   setView(v.id);
                   setSelected(null);
                 }}
-                className={`rounded-lg px-3.5 py-1.5 text-sm ${active ? "bg-surface font-medium shadow-sm" : "text-muted hover:text-ink"}`}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm ${active ? "bg-surface font-medium shadow-sm" : "text-subtle hover:text-ink"}`}
               >
+                <v.icon aria-hidden className="size-4" />
                 {v.label}
               </button>
             );
@@ -71,9 +76,9 @@ export function AttemptBrowser({
       ) : shown ? (
         <>
           {view === "history" && (
-            <button type="button" onClick={() => setSelected(null)} className="no-print text-sm text-muted hover:text-ink">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setSelected(null)} className="no-print -ml-3 text-subtle">
               ← Back to all attempts
-            </button>
+            </Button>
           )}
           {/* key resets tab state when switching attempts */}
           <ReportView key={shown.key} interview={shown} competency={competency} name={name} email={email} actionsSlot={actionsSlot} />
@@ -81,7 +86,7 @@ export function AttemptBrowser({
       ) : (
         <section className="rounded-2xl border border-line bg-surface p-8">
           <p className="text-lg font-semibold">No scored interview yet</p>
-          <p className="mt-1 text-muted">Your best result will show here once a completed interview has been reviewed and released.</p>
+          <p className="mt-1 text-subtle">Your best result will show here once a completed interview has been reviewed and released.</p>
         </section>
       )}
     </div>
@@ -102,7 +107,7 @@ function History({
   return (
     <div className="overflow-x-auto rounded-2xl border border-line bg-surface">
       <table className="w-full min-w-[40rem] text-left text-sm">
-        <thead className="border-b border-line text-xs uppercase tracking-[0.06em] text-muted">
+        <thead className="border-b border-line text-xs uppercase tracking-[0.06em] text-subtle">
           <tr>
             <th scope="col" className="px-5 py-3.5 font-semibold">#</th>
             <th scope="col" className="px-5 py-3.5 font-semibold">Date</th>
@@ -122,7 +127,7 @@ function History({
             const level = showLevels ? a.admin?.level || a.level : cleared ? a.level : "";
             return (
               <tr key={a.key} className="hover:bg-sunken">
-                <td className="px-5 py-3.5 font-mono text-muted">{a.attemptNo}</td>
+                <td className="px-5 py-3.5 font-mono text-subtle">{a.attemptNo}</td>
                 <td className="whitespace-nowrap px-5 py-3.5">
                   {formatDate(a.date)}
                   {a.key === bestKey && <span className="ml-2 rounded bg-good-soft px-1.5 py-0.5 text-xs font-medium text-good">Best</span>}
@@ -136,11 +141,21 @@ function History({
                     "—"
                   )}
                 </td>
-                <td className="px-5 py-3.5">{scored && level ? level : "—"}</td>
+                <td className="px-5 py-3.5">
+                  {scored && level ? (
+                    <span className="inline-flex items-center gap-2">
+                      {level}
+                      {/* Students who didn't clear never see their level. */}
+                      {showLevels && !cleared && <AdminOnlyBadge compact />}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td className="px-5 py-3.5 text-right">
-                  <button type="button" onClick={() => onOpen(a.key)} className="font-medium underline-offset-4 hover:underline">
+                  <Button type="button" variant="link" size="sm" onClick={() => onOpen(a.key)} className="h-auto p-0">
                     View
-                  </button>
+                  </Button>
                 </td>
               </tr>
             );

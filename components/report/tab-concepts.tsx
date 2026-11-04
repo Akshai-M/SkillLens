@@ -3,6 +3,10 @@
 import { useMemo, useState } from "react";
 import type { AiConcept, ConceptStatus } from "@/lib/report/ai";
 import type { ReportDomain } from "@/lib/report/parse";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Icon, TONE_TEXT, statusFor } from "./ui";
 
 type Row = { concept: AiConcept; tier: string };
@@ -61,25 +65,25 @@ export function ConceptsTab({ domains }: { domains: ReportDomain[] }) {
       <div className="flex flex-col justify-between gap-4 border-b border-line pb-4 md:flex-row md:items-center">
         <div>
           <h2 className="font-display text-base font-semibold">Concept Mastery Matrix</h2>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-subtle">
             Granular breakdown of {rows.length} concepts evaluated across {tiers.length} {tiers.length === 1 ? "domain" : "domains"}
           </p>
         </div>
-        <label className="no-print relative block md:min-w-[240px]">
+        <label className="no-print relative block md:min-w-[260px]">
           <span className="sr-only">Search concepts</span>
           <Icon name="search" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-          <input
+          <Input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search concepts, gaps, or remedies..."
-            className="w-full rounded-md border border-line bg-slate-50 py-1.5 pl-9 pr-3 text-xs placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-ink"
+            className="pl-9"
           />
         </label>
       </div>
 
       <div className="no-print flex flex-wrap items-center justify-between gap-3">
-        <div role="group" aria-label="Filter by status" className="inline-flex flex-wrap gap-1 rounded-md bg-accent-soft p-1">
+        <div role="group" aria-label="Filter by status" className="inline-flex flex-wrap gap-1 rounded-md bg-brand-soft p-1">
           {FILTERS.filter((f) => f.id !== "not_yet_familiar" || count(f.id) > 0).map((f) => {
             const active = status === f.id;
             return (
@@ -96,30 +100,33 @@ export function ConceptsTab({ domains }: { domains: ReportDomain[] }) {
           })}
         </div>
         {tiers.length > 1 && (
-          <label className="flex w-full items-center gap-2 text-xs text-slate-600 sm:w-auto">
-            <span className="shrink-0 text-slate-400">Filter Domain:</span>
-            <select
-              value={tier}
-              onChange={(e) => setTier(e.target.value)}
-              className="min-w-0 flex-1 cursor-pointer rounded border border-line bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-ink sm:flex-none"
-            >
-              <option value="all">All Domains</option>
-              {tiers.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <Label htmlFor="concept-domain" className="shrink-0 text-xs font-normal text-slate-400">
+              Filter Domain:
+            </Label>
+            <Select value={tier} onValueChange={setTier}>
+              <SelectTrigger id="concept-domain" size="sm" className="min-w-0 flex-1 sm:w-56 sm:flex-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Domains</SelectItem>
+                {tiers.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
       </div>
 
       {visible.length === 0 ? (
         <div className="rounded-md border border-line bg-slate-50 p-8 text-center">
           <p className="text-sm text-slate-600">No concepts matched your current search and filters.</p>
-          <button type="button" onClick={reset} className="mt-3 text-xs font-medium hover:underline">
+          <Button type="button" variant="link" size="sm" onClick={reset} className="mt-2">
             Reset Filters
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -129,14 +136,14 @@ export function ConceptsTab({ domains }: { domains: ReportDomain[] }) {
             return (
               <div key={`${r.tier}-${i}`} className="print-avoid-break flex flex-col rounded-md border border-line bg-slate-50/40 p-4 transition-colors hover:bg-slate-50">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
-                  <span className="text-xs font-medium text-muted">{r.tier}</span>
+                  <span className="text-xs font-medium text-subtle">{r.tier}</span>
                   <span className={`text-xs font-semibold ${TONE_TEXT[s.tone]}`}>{s.label}</span>
                 </div>
                 <h3 className="mb-2.5 font-display text-sm font-semibold">{r.concept.name}</h3>
                 {mastered
                   ? r.concept.wentWell && (
                       <div className="mt-2 space-y-1 text-xs text-slate-700">
-                        <span className="block font-medium text-muted">Demonstrated Competency:</span>
+                        <span className="block font-medium text-subtle">Demonstrated Competency:</span>
                         <p className="rounded border border-line/60 bg-white/80 p-2.5 leading-relaxed">{r.concept.wentWell}</p>
                       </div>
                     )

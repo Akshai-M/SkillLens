@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 /** Clamps long text to a few lines with a Show more / Show less toggle. */
 export function ExpandableText({ text, lines = 3 }: { text: string; lines?: number }) {
@@ -29,14 +30,16 @@ export function ExpandableText({ text, lines = 3 }: { text: string; lines?: numb
         {text}
       </p>
       {(overflows || expanded) && (
-        <button
+        <Button
           type="button"
+          variant="link"
+          size="sm"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
-          className="no-print mt-1.5 text-sm font-medium text-accent hover:underline"
+          className="no-print mt-1 h-auto p-0 font-medium"
         >
           {expanded ? "Show less" : "Show more"}
-        </button>
+        </Button>
       )}
     </div>
   );

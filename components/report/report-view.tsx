@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import type { Competency } from "@/lib/competencies";
 import { formatDate } from "@/lib/report/fields";
 import { isCleared, levelStatus, type Interview } from "@/lib/report/parse";
+import { trackReportOpen, trackReportSection } from "@/lib/analytics/tracker";
 import { exportReportPdf } from "@/lib/report/pdf";
 import { ReportHero } from "./report-hero";
 import { SetupSection, SheetReport } from "./sheet-report";
@@ -13,6 +14,8 @@ import { ConceptsTab, conceptRows } from "./tab-concepts";
 import { DomainsTab } from "./tab-domains";
 import { PlanTab } from "./tab-plan";
 import { CopyButton, SummaryTab } from "./tab-summary";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Icon } from "./ui";
 
 const STATUS_MESSAGES: Record<string, { title: string; body: string }> = {
@@ -53,6 +56,19 @@ export function ReportView({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Record a report view (and its viewing time) for released reports a student opens.
+  // Admin lookups carry `interview.admin` and are never counted.
+  const viewable = interview.status === "completed" && interview.released && !interview.admin;
+  useEffect(() => {
+    if (!viewable) return;
+    return trackReportOpen(competency.slug, interview.key);
+  }, [viewable, competency.slug, interview.key]);
+
+  // Time spent on each tab of the report (runs after the view above is opened).
+  useEffect(() => {
+    if (viewable && tab !== "audit") trackReportSection(tab);
+  }, [viewable, tab, interview.key]);
   const slot = actionsSlot ?? null;
 
   if (interview.status !== "completed" || !interview.released) {
@@ -65,7 +81,7 @@ export function ReportView({
           };
     return (
       <section className="rounded-lg border border-line bg-white p-4 sm:p-8">
-        <p className="font-mono text-xs text-muted">
+        <p className="font-mono text-xs text-subtle">
           {competency.title} · {formatDate(interview.date)}
           {interview.time && `, ${interview.time}`} · Attempt {interview.attemptNo}
         </p>
@@ -111,23 +127,16 @@ export function ReportView({
   };
 
   const rawButton = isAdmin && (
-    <button
-      type="button"
-      onClick={() => setRawOpen(true)}
-      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-line bg-white px-3 py-1.5 text-sm text-ink hover:bg-canvas"
-    >
-      <Icon name="fileCode" className="size-4 text-slate-600" /> Raw Data
-    </button>
+    <Button type="button" variant="outline" size="sm" onClick={() => setRawOpen(true)}>
+      <Icon name="fileCode" className="text-slate-600" /> Raw Data
+      <span className="rounded-full bg-amber-soft px-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber">Admin only</span>
+    </Button>
   );
   const printButton = (
-    <button
-      type="button"
-      onClick={downloadPdf}
-      disabled={exporting}
-      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-on-accent shadow-xs hover:bg-accent-strong disabled:opacity-60"
-    >
-      <Icon name="download" className="size-4" /> {exporting ? "Preparing PDF…" : "Download PDF"}
-    </button>
+    <Button type="button" size="sm" onClick={downloadPdf} disabled={exporting}>
+      {exporting ? <Spinner /> : <Icon name="download" />}
+      {exporting ? "Preparing PDF" : "Download PDF"}
+    </Button>
   );
 
   const rawModal = rawOpen && <RawDataModal interview={interview} onClose={() => setRawOpen(false)} />;
@@ -136,15 +145,15 @@ export function ReportView({
       <div className="flex items-center gap-3 rounded-lg bg-slate-900 px-4 py-3 text-sm text-white shadow-xl">
         {exporting ? (
           <>
-            <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />
-            Preparing your PDF…
+            <Spinner />
+            Preparing your PDF
           </>
         ) : (
           <>
             {exportError}
-            <button type="button" onClick={() => setExportError(null)} className="text-white/70 hover:text-white">
+            <Button type="button" variant="link" size="sm" onClick={() => setExportError(null)} className="h-auto p-0 text-white/80 hover:text-white">
               Dismiss
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -187,7 +196,7 @@ export function ReportView({
     { id: "domains", nav: "Domain Evaluation", label: `Domain Evaluations (${s.domains.length})` },
     ...(concepts > 0 ? [{ id: "concepts" as const, nav: "Concept Mastery", label: `Concept Mastery (${concepts} Topics)` }] : []),
     ...(weeks > 0 ? [{ id: "plan" as const, nav: `${weeks}-Week Prep Plan`, label: `${weeks}-Week Prep Plan (${weeks} Weeks)` }] : []),
-    ...(isAdmin ? [{ id: "audit" as const, nav: "Interviewer Audit", label: `Interviewer Audit (${flags} ${flags === 1 ? "Flag" : "Flags"})` }] : []),
+    ...(isAdmin ? [{ id: "audit" as const, nav: "Interviewer Audit", label: `Interviewer Audit (${flags} ${flags === 1 ? "Flag" : "Flags"}) · Admin only` }] : []),
   ];
 
   const drill = (key: string) => {
@@ -303,14 +312,14 @@ function RawDataModal({ interview, onClose }: { interview: Interview; onClose: (
             <h3 id="raw-title" className="font-display text-base font-semibold">
               Interview Evaluation JSON Inspector
             </h3>
-            <p className="text-xs text-muted">Parsed data for this attempt, including admin-only fields</p>
+            <p className="text-xs text-subtle">Parsed data for this attempt, including admin-only fields</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-            <Icon name="close" className="size-5" />
-          </button>
+          <Button type="button" variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close">
+            <Icon name="close" />
+          </Button>
         </div>
         <div className="flex flex-1 flex-col overflow-hidden p-6">
-          <div className="flex items-center justify-between pb-2 font-mono text-xs text-muted">
+          <div className="flex items-center justify-between pb-2 font-mono text-xs text-subtle">
             <span>Payload Preview</span>
             <CopyButton text={json} label="Copy JSON" />
           </div>
@@ -322,9 +331,9 @@ function RawDataModal({ interview, onClose }: { interview: Interview; onClose: (
           />
         </div>
         <div className="flex justify-end border-t border-line bg-slate-50 px-6 py-4">
-          <button type="button" onClick={onClose} className="rounded px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-200">
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { COMPETENCIES, type Competency } from "@/lib/competencies";
 import { formatDate } from "@/lib/report/fields";
-import { bestAttempt, getAttempts, isCleared, type Interview } from "@/lib/report/parse";
+import { getAttempts, isCleared, isScored, type Interview } from "@/lib/report/parse";
 import { useStoredReport } from "@/lib/report/store";
 import { ContentSkeleton } from "@/components/app-header";
 import { NoStoredData, RefetchBar } from "./refetch-bar";
@@ -35,7 +35,7 @@ export function Dashboard({ email, name }: { email: string; name: string }) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <h1 className="break-words text-xl font-semibold tracking-tight sm:text-3xl">Hi {data?.name || name}</h1>
-          <p className="mt-1 text-sm text-muted sm:text-base">Pick a competency to see your interview feedback.</p>
+          <p className="mt-1 text-sm text-subtle sm:text-base">Pick a competency to see your interview feedback.</p>
         </div>
         {data && <RefetchBar fetchedAt={data.fetchedAt} />}
       </div>
@@ -46,7 +46,7 @@ export function Dashboard({ email, name }: { email: string; name: string }) {
         <section className="mt-8 sm:mt-10">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 sm:mb-5">
             <h2 className="font-display text-lg font-semibold tracking-tight sm:text-xl">Competencies Evaluation Matrix</h2>
-            <p className="font-mono text-xs text-muted sm:text-sm">
+            <p className="font-mono text-xs text-subtle sm:text-sm">
               {taken} of {COMPETENCIES.length} taken
             </p>
           </div>
@@ -65,22 +65,25 @@ export function Dashboard({ email, name }: { email: string; name: string }) {
 
 function CompetencyCard({ competency, attempts }: { competency: Competency; attempts: Interview[] }) {
   const count = attempts.length;
-  const best = bestAttempt(attempts);
+  // Cards show the student's most recent attempt.
+  const latest = attempts[0];
 
   if (count === 0) {
     return (
       <div className="flex h-full flex-col rounded-2xl border border-dashed border-line bg-white/60 p-5 sm:p-8">
         <CardHeader competency={competency}>
-          <span className="shrink-0 rounded-full border border-line px-2.5 py-0.5 text-xs text-muted sm:px-3 sm:py-1 sm:text-sm">No interview yet</span>
+          <span className="shrink-0 rounded-full border border-line px-2.5 py-0.5 text-xs text-subtle sm:px-3 sm:py-1 sm:text-sm">No interview yet</span>
         </CardHeader>
-        <p className="mt-5 border-t border-line pt-5 text-sm text-muted sm:mt-6 sm:pt-6">Your feedback will appear here once you take this interview.</p>
+        <p className="mt-5 border-t border-line pt-5 text-sm text-subtle sm:mt-6 sm:pt-6">Your feedback will appear here once you take this interview.</p>
       </div>
     );
   }
 
-  const shown = best ?? attempts[0];
-  const cleared = best ? isCleared(best.clearance) : false;
-  const chips = best ? topSkills(best) : [];
+  const scored = latest ? isScored(latest) : false;
+  const cleared = scored && isCleared(latest.clearance);
+  const chips = scored ? topSkills(latest) : [];
+  const pendingLabel =
+    latest?.status === "cancelled" ? "Cancelled" : latest?.status === "no_show" ? "Missed" : latest?.status === "completed" ? "Under review" : "Scheduled";
 
   return (
     <Link
@@ -97,21 +100,21 @@ function CompetencyCard({ competency, attempts }: { competency: Competency; atte
       <div className="mt-5 border-t border-line pt-5 sm:mt-6 sm:pt-6">
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
           <div>
-            <p className="text-sm text-muted">Best score</p>
-            {best?.score != null ? (
+            <p className="text-sm text-subtle">Latest score</p>
+            {scored && latest.score != null ? (
               <p className="mt-1 flex items-baseline gap-1.5">
-                <span className="font-mono text-3xl font-semibold tabular-nums tracking-tight sm:text-4xl">{best.score}</span>
-                <span className="font-mono text-sm text-muted">/100</span>
+                <span className="font-mono text-3xl font-semibold tabular-nums tracking-tight sm:text-4xl">{latest.score}</span>
+                <span className="font-mono text-sm text-subtle">/100</span>
               </p>
             ) : (
-              <p className="mt-1 text-lg font-semibold text-muted sm:text-xl">Not scored yet</p>
+              <p className="mt-1 text-lg font-semibold text-subtle sm:text-xl">{pendingLabel}</p>
             )}
           </div>
-          {best?.clearance && (
+          {scored && latest.clearance && (
             <div className="sm:text-right">
-              <p className="text-sm text-muted">Result</p>
+              <p className="text-sm text-subtle">Result</p>
               <p className={`mt-1 font-semibold ${cleared ? "text-good" : "text-bad"}`}>
-                {cleared ? `Cleared${best.level ? ` · ${best.level}` : ""}` : "Not Cleared"}
+                {cleared ? `Cleared${latest.level ? ` · ${latest.level}` : ""}` : "Not Cleared"}
               </p>
             </div>
           )}
@@ -120,14 +123,14 @@ function CompetencyCard({ competency, attempts }: { competency: Competency; atte
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100 sm:mt-5 sm:h-2.5" aria-hidden>
           <div
             className={`h-full rounded-full ${BAR_COLOR[competency.slug] ?? "bg-slate-500"}`}
-            style={{ width: `${Math.min(100, Math.max(0, best?.score ?? 0))}%` }}
+            style={{ width: `${Math.min(100, Math.max(0, scored ? latest.score ?? 0 : 0))}%` }}
           />
         </div>
 
         <p className="mt-4 flex items-center gap-2 text-sm text-slate-600 sm:mt-5">
-          <Icon name="calendar" className="size-4 shrink-0 text-muted" />
-          {formatDate(shown.date)}
-          {shown.time && `, ${shown.time}`}
+          <Icon name="calendar" className="size-4 shrink-0 text-subtle" />
+          {formatDate(latest.date)}
+          {latest.time && `, ${latest.time}`}
         </p>
 
         {chips.length > 0 && (
@@ -137,7 +140,7 @@ function CompetencyCard({ competency, attempts }: { competency: Competency; atte
                 {s.name} <span className="font-semibold text-ink">{s.rating}/5</span>
               </li>
             ))}
-            {chips.length > MAX_CHIPS && <li className="text-sm text-muted">+{chips.length - MAX_CHIPS} more</li>}
+            {chips.length > MAX_CHIPS && <li className="text-sm text-subtle">+{chips.length - MAX_CHIPS} more</li>}
           </ul>
         )}
       </div>

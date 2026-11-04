@@ -2,6 +2,7 @@
 
 import { useCallback, useState, useSyncExternalStore } from "react";
 import type { AiWeek } from "@/lib/report/ai";
+import { Button } from "@/components/ui/button";
 import { Icon } from "./ui";
 
 // Ticked tasks are a per-student convenience, kept in this browser only.
@@ -97,42 +98,35 @@ export function PlanTab({ weeks, storageKey, subtitle, name }: { weeks: AiWeek[]
       <div className="flex flex-col justify-between gap-4 border-b border-line pb-4 md:flex-row md:items-center">
         <div>
           <h2 className="font-display text-base font-semibold">{heading}</h2>
-          <p className="text-xs text-muted">{subtitle}</p>
+          <p className="text-xs text-subtle">{subtitle}</p>
         </div>
         <div className="no-print flex shrink-0 flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={exportPlan}
-            className="inline-flex items-center gap-1.5 rounded bg-accent-soft px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200"
-          >
-            <Icon name="download" className="size-3.5" /> Export Plan (.md)
-          </button>
+          <Button type="button" variant="secondary" size="sm" onClick={exportPlan}>
+            <Icon name="download" /> Export Plan (.md)
+          </Button>
           {completed > 0 &&
             (confirmReset ? (
               <span className="inline-flex items-center gap-2 text-xs">
-                <span className="text-muted">Reset all ticks?</span>
-                <button
+                <span className="text-subtle">Reset all ticks?</span>
+                <Button
                   type="button"
+                  variant="destructive"
+                  size="xs"
                   onClick={() => {
                     clear();
                     setConfirmReset(false);
                   }}
-                  className="rounded bg-rose-50 px-2 py-1 font-medium text-bad hover:bg-rose-100"
                 >
                   Reset
-                </button>
-                <button type="button" onClick={() => setConfirmReset(false)} className="px-1 py-1 text-muted hover:text-ink">
+                </Button>
+                <Button type="button" variant="ghost" size="xs" onClick={() => setConfirmReset(false)}>
                   Cancel
-                </button>
+                </Button>
               </span>
             ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmReset(true)}
-                className="inline-flex items-center gap-1 rounded px-2.5 py-1.5 text-xs text-muted hover:text-slate-800"
-              >
-                <Icon name="reset" className="size-3.5" /> Reset
-              </button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmReset(true)} className="text-subtle">
+                <Icon name="reset" /> Reset
+              </Button>
             ))}
         </div>
       </div>
@@ -161,7 +155,7 @@ export function PlanTab({ weeks, storageKey, subtitle, name }: { weeks: AiWeek[]
           <article data-pdf-block key={w.week} className="print-avoid-break space-y-4 rounded-lg border border-line bg-slate-50/30 p-4 sm:p-6">
             <header className="flex flex-col justify-between gap-3 border-b border-line pb-3 sm:flex-row sm:items-start">
               <div className="space-y-1">
-                <p className="flex items-center gap-2 font-mono text-xs font-semibold text-muted">
+                <p className="flex items-center gap-2 font-mono text-xs font-semibold text-subtle">
                   <Icon name="calendar" className="size-3.5" />
                   <span>WEEK {String(w.week).padStart(2, "0")}</span>
                 </p>
@@ -169,7 +163,7 @@ export function PlanTab({ weeks, storageKey, subtitle, name }: { weeks: AiWeek[]
               </div>
               {w.target && (
                 <div className="shrink-0 sm:max-w-md sm:text-right">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted">Milestone Target</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-subtle">Milestone Target</p>
                   <p className="mt-0.5 text-xs font-medium text-emerald-800 sm:text-sm">{w.target}</p>
                 </div>
               )}

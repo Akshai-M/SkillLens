@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { AiTopic } from "@/lib/report/ai";
 import type { ReportDomain } from "@/lib/report/parse";
+import { Button } from "@/components/ui/button";
 import { ExpandableText } from "./expandable-text";
 import { domainKey } from "./tab-summary";
 import { Icon, TONE_BAR, TONE_TEXT, domainIcon, statusFor } from "./ui";
@@ -53,17 +54,17 @@ function DomainDetail({
     >
       <header className="flex flex-col justify-between gap-4 border-b border-line pb-5 sm:flex-row sm:items-start">
         <div className="flex items-center gap-3">
-          <span className="rounded bg-accent-soft p-2 text-slate-700">
+          <span className="rounded bg-brand-soft p-2 text-slate-700">
             <Icon name={domainIcon(`${domain.id} ${domain.name}`)} className="size-5" />
           </span>
           <div>
-            {domain.tag && <p className="mb-0.5 font-mono text-xs text-muted">Level {domain.tag.replace(/^L/, "")}</p>}
+            {domain.tag && <p className="mb-0.5 font-mono text-xs text-subtle">Level {domain.tag.replace(/^L/, "")}</p>}
             <h3 className="break-words font-display text-lg font-bold">{domain.name}</h3>
           </div>
         </div>
         <div className="flex shrink-0 flex-row items-center justify-between gap-2 sm:flex-col sm:items-end">
           <p className="flex items-baseline gap-1.5">
-            <span className="text-xs text-muted">Rating:</span>
+            <span className="text-xs text-subtle">Rating:</span>
             <span className="font-mono text-xl font-bold tabular-nums">{domain.rating ?? "—"}</span>
             <span className="font-mono text-xs text-slate-400">/ 5</span>
           </p>
@@ -78,7 +79,7 @@ function DomainDetail({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {domain.summary && (
             <div className="rounded border border-line/80 bg-slate-50 p-4">
-              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
+              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-subtle">
                 <Icon name="eye" className="size-3.5 text-slate-700" /> Observed Performance
               </p>
               <p className="text-sm leading-relaxed text-slate-800">{domain.summary}</p>
@@ -114,7 +115,7 @@ function DomainDetail({
           <ol className="space-y-2">
             {domain.actions.map((a, i) => (
               <li key={i} className="flex items-start gap-2.5 text-xs text-slate-800 sm:text-sm">
-                <span className="mt-0.5 font-mono text-xs font-semibold text-muted">{i + 1}.</span>
+                <span className="mt-0.5 font-mono text-xs font-semibold text-subtle">{i + 1}.</span>
                 <span>{a}</span>
               </li>
             ))}
@@ -124,7 +125,7 @@ function DomainDetail({
 
       {domain.remarks && (
         <div className="rounded border border-line p-4">
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-muted">Interviewer Remarks</p>
+          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-subtle">Interviewer Remarks</p>
           <div className="text-sm leading-relaxed text-slate-800">
             <ExpandableText text={domain.remarks} />
           </div>
@@ -136,17 +137,12 @@ function DomainDetail({
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h4 className="font-display text-sm font-semibold">Concept Areas Evaluated ({domain.concepts.length})</h4>
-              <p className="text-xs text-muted">Specific concepts tested in this section</p>
+              <p className="text-xs text-subtle">Specific concepts tested in this section</p>
             </div>
-            <button
-              type="button"
-              onClick={onToggleConcepts}
-              aria-expanded={conceptsOpen}
-              className="no-print inline-flex items-center gap-1 rounded border border-line px-2.5 py-1 text-xs text-slate-600 hover:text-ink"
-            >
+            <Button type="button" variant="outline" size="xs" onClick={onToggleConcepts} aria-expanded={conceptsOpen} className="no-print">
               {conceptsOpen ? "Collapse" : "Expand"}
-              <Icon name={conceptsOpen ? "chevronUp" : "chevronDown"} className="size-3.5" />
-            </button>
+              <Icon name={conceptsOpen ? "chevronUp" : "chevronDown"} />
+            </Button>
           </div>
           <div className={`grid grid-cols-1 gap-3.5 md:grid-cols-2 ${conceptsOpen ? "" : "hidden print:grid"}`}>
             {domain.concepts.map((c, i) => {
@@ -181,7 +177,9 @@ function DomainDetail({
         </div>
       )}
 
+      {/* Topics discussed is hidden for now. To show it again, restore:
       {domain.topics.length > 0 && <TopicsDiscussed topics={domain.topics} />}
+      */}
     </article>
   );
 }
@@ -222,17 +220,18 @@ const RESULT: Record<AiTopic["result"], { label: string; className: string; icon
   correct: { label: "Correct", className: "text-good", icon: "✓" },
   partial: { label: "Partly correct", className: "text-warn", icon: "◐" },
   wrong: { label: "Incorrect", className: "text-bad", icon: "✕" },
-  dont_know: { label: "Didn't know", className: "text-muted", icon: "?" },
-  no_answer: { label: "No answer", className: "text-muted", icon: "–" },
+  dont_know: { label: "Didn't know", className: "text-subtle", icon: "?" },
+  no_answer: { label: "No answer", className: "text-subtle", icon: "–" },
 };
 
-function TopicsDiscussed({ topics }: { topics: AiTopic[] }) {
+/** Per-topic results from the evidence log. Currently not rendered (see the commented-out use above). */
+export function TopicsDiscussed({ topics }: { topics: AiTopic[] }) {
   const correct = topics.filter((t) => t.result === "correct").length;
   return (
     <details className="border-t border-line pt-4 text-sm">
       <summary className="cursor-pointer select-none font-display text-sm font-semibold">
         Topics Discussed ({topics.length})
-        {correct > 0 && <span className="font-sans text-xs font-normal text-muted"> · {correct} answered correctly</span>}
+        {correct > 0 && <span className="font-sans text-xs font-normal text-subtle"> · {correct} answered correctly</span>}
       </summary>
       <ul className="mt-3 divide-y divide-line rounded border border-line">
         {topics.map((t, i) => {
@@ -241,7 +240,7 @@ function TopicsDiscussed({ topics }: { topics: AiTopic[] }) {
             <li key={i} className="flex items-start justify-between gap-3 px-3.5 py-2 text-xs sm:text-sm">
               <span className="text-slate-700">{t.topic}</span>
               <span className={`flex shrink-0 items-center gap-1.5 text-xs font-medium ${r.className}`}>
-                {t.hint && <span className="rounded bg-accent-soft px-1.5 py-0.5 font-normal text-muted">with hint</span>}
+                {t.hint && <span className="rounded bg-brand-soft px-1.5 py-0.5 font-normal text-subtle">with hint</span>}
                 <span aria-hidden>{r.icon}</span>
                 {r.label}
               </span>

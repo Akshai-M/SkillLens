@@ -21,10 +21,10 @@ export function CompetencyReport({ slug, email, name }: { slug: string; email: s
   const header = (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <Link href="/" className="no-print text-sm text-muted hover:text-ink">
+        <Link href="/" className="no-print text-sm text-subtle hover:text-ink">
           ← All competencies
         </Link>
-        <p className="mt-2 text-sm font-medium text-muted">{competency.title}</p>
+        <p className="mt-2 text-sm font-medium text-subtle">{competency.title}</p>
       </div>
       {data && (
         <div className="flex flex-col items-start gap-2 sm:items-end">
@@ -51,7 +51,7 @@ export function CompetencyReport({ slug, email, name }: { slug: string; email: s
       {attempts.length === 0 ? (
         <section className="rounded-2xl border border-line bg-surface p-8 text-center">
           <p className="font-medium">No {competency.title} interview yet</p>
-          <p className="mt-1 text-sm text-muted">Once you take this interview, your feedback will appear here. Use Refetch to check for new results.</p>
+          <p className="mt-1 text-sm text-subtle">Once you take this interview, your feedback will appear here. Use Refetch to check for new results.</p>
         </section>
       ) : (
         <AttemptBrowser competency={competency} attempts={attempts} name={data.name || name} email={email} actionsSlot={actionsSlot} />

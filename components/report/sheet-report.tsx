@@ -36,7 +36,7 @@ function SkillCard({ skill }: { skill: SkillResult }) {
 
       {skill.rating !== null && (
         <>
-          <div className="mt-5 flex items-baseline justify-between text-sm text-muted">
+          <div className="mt-5 flex items-baseline justify-between text-sm text-subtle">
             <span>Rating</span>
             <span>
               <span className="text-xl font-semibold text-ink">{skill.rating}</span> / 5
@@ -46,12 +46,12 @@ function SkillCard({ skill }: { skill: SkillResult }) {
 
           <div className="mt-5 space-y-4 text-[15px] leading-relaxed">
             <div className="rounded-lg bg-sunken p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Where you are</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-subtle">Where you are</p>
               <p className="mt-1">{skill.observed || "—"}</p>
             </div>
             {(skill.nextLevel || topLevel) && (
               <div className="rounded-lg bg-sunken p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">{topLevel ? "Next step" : "To reach the next level"}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-subtle">{topLevel ? "Next step" : "To reach the next level"}</p>
                 <p className="mt-1">{skill.nextLevel ?? "Top of the rubric — keep this sharp with real projects."}</p>
               </div>
             )}
@@ -61,7 +61,7 @@ function SkillCard({ skill }: { skill: SkillResult }) {
 
       {skill.remarks && (
         <div className="mt-4 rounded-lg border border-line p-4 text-[15px]">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Interviewer remarks</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-subtle">Interviewer remarks</p>
           <div className="mt-1">
             <ExpandableText text={skill.remarks} />
           </div>
@@ -90,7 +90,7 @@ export function SetupSection({ interview }: { interview: Interview }) {
         }
         action={
           interview.integrityScore !== null && (
-            <span className="text-sm text-muted">
+            <span className="text-sm text-subtle">
               Score <span className="text-lg font-semibold text-ink">{interview.integrityScore}</span> / 5
             </span>
           )
@@ -119,7 +119,7 @@ export function SetupSection({ interview }: { interview: Interview }) {
       )}
       {interview.integrityRemarks && (
         <div className="mt-4 rounded-lg bg-sunken p-4 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Interviewer remarks</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-subtle">Interviewer remarks</p>
           <div className="mt-1">
             <ExpandableText text={interview.integrityRemarks} />
           </div>

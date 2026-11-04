@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Interview } from "@/lib/report/parse";
-import { Icon, type IconName } from "./ui";
+import { AdminOnlyBadge, Icon, type IconName } from "./ui";
 
 /** Admin-only: internal_only flags and the interview's internal record. */
 export function AuditTab({ interview }: { interview: Interview }) {
@@ -24,10 +24,13 @@ export function AuditTab({ interview }: { interview: Interview }) {
       <div data-pdf-block className="space-y-6 rounded-lg border border-line bg-white p-4 sm:p-7">
         <div className="flex flex-col justify-between gap-2 border-b border-line pb-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="font-display text-base font-semibold">Interviewer Audit &amp; Data Quality Records</h2>
-            <p className="text-xs text-muted">Internal evaluation metadata and transcript fidelity logs (restricted access, never shown to the student)</p>
+            <h2 className="flex flex-wrap items-center gap-2 font-display text-base font-semibold">
+              Interviewer Audit &amp; Data Quality Records
+              <AdminOnlyBadge />
+            </h2>
+            <p className="mt-0.5 text-xs text-subtle">Internal evaluation metadata and transcript fidelity logs. Students never see this section.</p>
           </div>
-          {admin.interviewer && <p className="font-mono text-xs text-muted">Evaluator: {admin.interviewer}</p>}
+          {admin.interviewer && <p className="font-mono text-xs text-subtle">Evaluator: {admin.interviewer}</p>}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -89,7 +92,7 @@ export function AuditTab({ interview }: { interview: Interview }) {
               .filter(([, v]) => v)
               .map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-4 py-2.5">
-                  <dt className="text-muted">{k}</dt>
+                  <dt className="text-subtle">{k}</dt>
                   <dd className="text-right font-medium">{v}</dd>
                 </div>
               ))}
@@ -109,13 +112,13 @@ export function AuditTab({ interview }: { interview: Interview }) {
                     className="inline-flex items-center gap-1.5 rounded border border-line px-3 py-1.5 text-xs font-medium hover:bg-slate-50"
                   >
                     <Icon name="link" className="size-3.5" /> {l.label}
-                    <Icon name="arrowUpRight" className="size-3 text-muted" />
+                    <Icon name="arrowUpRight" className="size-3 text-subtle" />
                   </a>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-muted">No recording or transcript links.</p>
+            <p className="mt-3 text-sm text-subtle">No recording or transcript links.</p>
           )}
           {[
             ["Audit remarks", admin.auditRemarks],
@@ -125,7 +128,7 @@ export function AuditTab({ interview }: { interview: Interview }) {
             .filter(([, v]) => v)
             .map(([k, v]) => (
               <div key={k} className="mt-4 rounded border border-line bg-slate-50 p-3.5 text-sm">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted">{k}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-subtle">{k}</p>
                 <p className="mt-1 whitespace-pre-line text-slate-800">{v}</p>
               </div>
             ))}
@@ -152,6 +155,8 @@ export function AuditTab({ interview }: { interview: Interview }) {
   );
 }
 
+/** Marks admin-only content. */
+
 function InfoCard({
   label,
   icon,
@@ -169,12 +174,12 @@ function InfoCard({
 }) {
   return (
     <div className="rounded border border-line bg-slate-50 p-4">
-      <p className="text-xs font-medium uppercase text-muted">{label}</p>
+      <p className="text-xs font-medium uppercase text-subtle">{label}</p>
       <p className={`mt-1 flex items-center gap-1.5 text-sm font-semibold ${valueClass}`}>
         <Icon name={icon} className={`size-4 shrink-0 ${iconClass}`} />
         <span>{value}</span>
       </p>
-      <p className="mt-1 text-xs text-muted">{note}</p>
+      <p className="mt-1 text-xs text-subtle">{note}</p>
     </div>
   );
 }
