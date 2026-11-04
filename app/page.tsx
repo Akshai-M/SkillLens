@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { AppHeader, PageSkeleton } from "@/components/app-header";
 import { Dashboard } from "@/components/report/dashboard";
 import { requireStudent } from "@/lib/auth";
@@ -15,6 +16,7 @@ async function Home() {
   const student = await requireStudent();
   return (
     <>
+      <AnalyticsTracker />
       <AppHeader />
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-6 sm:px-6 sm:pb-24 sm:pt-8 lg:px-8">
         <Dashboard email={student.email} name={student.name} />
