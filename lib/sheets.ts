@@ -1,3 +1,4 @@
+import { publishedReports, type PublishedReport } from "./analytics/published";
 import { ALL_SHEET_NAMES } from "./competencies";
 import { field, normalizeKey, type SheetRow } from "./report/fields";
 import { normalizeAiReport } from "./report/ai";
@@ -124,7 +125,17 @@ function build(email: string, raw: Record<string, SheetRow[]>, prepare: (row: Sh
  * login and when the student presses Refetch; the result is kept in localStorage.
  */
 export async function fetchStudentData(email: string): Promise<StudentData> {
-  return build(email, await fetchRows(email), sanitize);
+  return (await fetchStudentBundle(email)).data;
+}
+
+/**
+ * The student's sanitised data plus metadata of their published reports. The metadata comes
+ * from the raw rows (before private columns are removed) and is only stored in the analytics
+ * database, never sent to the browser.
+ */
+export async function fetchStudentBundle(email: string): Promise<{ data: StudentData; reports: PublishedReport[] }> {
+  const raw = await fetchRows(email);
+  return { data: build(email, raw, sanitize), reports: publishedReports(raw) };
 }
 
 /** Full, unfiltered data for the admin dashboard. Never stored in the browser. */

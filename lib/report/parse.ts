@@ -157,6 +157,11 @@ function readAdmin(row: SheetRow): AdminDetails {
   };
 }
 
+/** Stable ID of one interview report; also used by analytics to match report views to published reports. */
+export function reportKey(sheetName: string, row: SheetRow): string {
+  return [sheetName, field(row, "UID"), field(row, "Date"), field(row, "Time")].join("|");
+}
+
 function toInterview(row: SheetRow, sheet: SheetDef): Omit<Interview, "attemptNo"> {
   const skills: SkillResult[] = sheet.skills.map((skill) => {
     const key = skill.key ?? skill.column;
@@ -178,7 +183,7 @@ function toInterview(row: SheetRow, sheet: SheetDef): Omit<Interview, "attemptNo
   const score5 = num(field(row, "Overall Score", "Final Verdict"));
 
   return {
-    key: [sheet.name, field(row, "UID"), field(row, "Date"), field(row, "Time")].join("|"),
+    key: reportKey(sheet.name, row),
     uid: field(row, "UID"),
     round: field(row, "Round"),
     date: field(row, "Date"),
