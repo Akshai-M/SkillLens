@@ -1,5 +1,6 @@
 "use client";
 
+import { BookOpen } from "lucide-react";
 import Link from "next/link";
 import { COMPETENCIES, type Competency } from "@/lib/competencies";
 import { formatDate } from "@/lib/report/fields";
@@ -75,6 +76,11 @@ function CompetencyCard({ competency, attempts }: { competency: Competency; atte
           <span className="shrink-0 rounded-full border border-line px-2.5 py-0.5 text-xs text-subtle sm:px-3 sm:py-1 sm:text-sm">No interview yet</span>
         </CardHeader>
         <p className="mt-5 border-t border-line pt-5 text-sm text-subtle sm:mt-6 sm:pt-6">Your feedback will appear here once you take this interview.</p>
+        <div className="mt-auto pt-5 sm:pt-6">
+          <div className="border-t border-line pt-4 sm:pt-5">
+            <PrepMaterialLink competency={competency} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -98,10 +104,7 @@ function CompetencyCard({ competency, attempts }: { competency: Competency; atte
         : null;
 
   return (
-    <Link
-      href={`/${competency.slug}`}
-      className="group flex h-full min-w-0 flex-col rounded-2xl border border-line bg-white p-5 transition hover:border-slate-300 hover:shadow-md active:bg-slate-50 sm:p-8"
-    >
+    <div className="group relative flex h-full min-w-0 flex-col rounded-2xl border border-line bg-white p-5 transition hover:border-slate-300 hover:shadow-md active:bg-slate-50 sm:p-8">
       <CardHeader competency={competency}>
         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 sm:gap-2 sm:px-3 sm:py-1 sm:text-sm">
           <span className="size-2 rounded-full bg-emerald-500" aria-hidden />
@@ -161,12 +164,35 @@ function CompetencyCard({ competency, attempts }: { competency: Competency; atte
       </div>
 
       <div className="mt-auto pt-5 sm:pt-6">
-        <div className="flex items-center justify-between border-t border-line pt-4 text-sm font-medium sm:pt-5 sm:text-base">
-          View report
-          <Icon name="arrowRight" className="size-5 transition-transform group-hover:translate-x-1" />
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 sm:pt-5">
+          <PrepMaterialLink competency={competency} />
+          {/* The ::after overlay makes the whole card open the report; the prep material link sits above it. */}
+          <Link
+            href={`/${competency.slug}`}
+            className="flex items-center gap-2 text-sm font-medium after:absolute after:inset-0 after:rounded-2xl sm:text-base"
+          >
+            View report
+            <Icon name="arrowRight" className="size-5 transition-transform group-hover:translate-x-1" />
+          </Link>
         </div>
       </div>
-    </Link>
+    </div>
+  );
+}
+
+/** Link to the competency's interview preparation material (the doc shared before scheduling). */
+function PrepMaterialLink({ competency }: { competency: Competency }) {
+  return (
+    <a
+      href={competency.prepMaterialUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="relative z-10 inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-ink"
+    >
+      <BookOpen aria-hidden className="size-4" />
+      Interview prep material
+      <span className="sr-only">(opens in a new tab)</span>
+    </a>
   );
 }
 

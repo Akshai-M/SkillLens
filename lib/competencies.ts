@@ -28,6 +28,8 @@ export type Competency = {
   slug: string;
   /** Official competency name, as used in the levels table. Shown everywhere in the UI. */
   title: string;
+  /** Interview preparation material (Google Doc) shared with students before their interview. */
+  prepMaterialUrl: string;
   /** Certifiable levels for this track, lowest first. */
   levels: string[];
   sheets: SheetDef[];
@@ -90,6 +92,7 @@ export const COMPETENCIES: Competency[] = [
     slug: "frontend-development",
     levels: ["L1", "L2", "L3", "L4"],
     title: "Frontend Development",
+    prepMaterialUrl: "https://docs.google.com/document/d/12v8V8HZvwfqnNrBOVLVmmdGpRqEYpZpF/edit",
     sheets: [
       {
         name: "Frontend Development",
@@ -204,6 +207,7 @@ export const COMPETENCIES: Competency[] = [
     slug: "dsa",
     levels: ["L1", "L2", "L3", "L4"],
     title: "Programming with Problem Solving (DSA)",
+    prepMaterialUrl: "https://docs.google.com/document/d/1Jo986xbryejIvgl_ca-HDB1nVVQRw22s/edit",
     sheets: [
       {
         name: "DSA 2.0 (current)",
@@ -253,6 +257,7 @@ export const COMPETENCIES: Competency[] = [
     slug: "backend-development",
     levels: ["L1", "L2", "L3", "L4"],
     title: "Backend Development",
+    prepMaterialUrl: "https://docs.google.com/document/d/15LT0I__fcE189eoPrJBsDRN4N_n520Xk/edit",
     sheets: [
       {
         name: "Backend Development",
@@ -332,6 +337,7 @@ export const COMPETENCIES: Competency[] = [
     slug: "se-fundamentals",
     levels: ["L1", "L2", "L3"],
     title: "Software Engineering Fundamentals",
+    prepMaterialUrl: "https://docs.google.com/document/d/1OBvn_Z38y0fGPh9vgzkf-rozWzvlTAU0/edit",
     sheets: [
       {
         name: "SE Fundamentals",
