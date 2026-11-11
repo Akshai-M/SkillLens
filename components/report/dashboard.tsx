@@ -83,7 +83,19 @@ function CompetencyCard({ competency, attempts }: { competency: Competency; atte
   const cleared = scored && isCleared(latest.clearance);
   const chips = scored ? topSkills(latest) : [];
   const pendingLabel =
-    latest?.status === "cancelled" ? "Cancelled" : latest?.status === "no_show" ? "Missed" : latest?.status === "completed" ? "Under review" : "Scheduled";
+    latest?.status === "cancelled"
+      ? "Interview cancelled"
+      : latest?.status === "no_show"
+        ? "Interview not attended"
+        : latest?.status === "completed"
+          ? "Under review"
+          : "Scheduled";
+  const pendingNote =
+    latest?.status === "no_show"
+      ? "You didn't join this interview, so there's no feedback. Contact your coordinator to reschedule."
+      : latest?.status === "cancelled"
+        ? "This interview was cancelled. Contact your coordinator to reschedule."
+        : null;
 
   return (
     <Link
@@ -107,7 +119,10 @@ function CompetencyCard({ competency, attempts }: { competency: Competency; atte
                 <span className="font-mono text-sm text-subtle">/100</span>
               </p>
             ) : (
-              <p className="mt-1 text-lg font-semibold text-subtle sm:text-xl">{pendingLabel}</p>
+              <>
+                <p className="mt-1 text-lg font-semibold text-subtle sm:text-xl">{pendingLabel}</p>
+                {pendingNote && <p className="mt-1 max-w-sm text-sm text-subtle">{pendingNote}</p>}
+              </>
             )}
           </div>
           {scored && latest.clearance && (

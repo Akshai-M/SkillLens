@@ -11,7 +11,7 @@ import { AdminOnlyBadge } from "./ui";
 
 type View = "best" | "latest" | "history";
 
-const STATUS_LABEL: Record<string, string> = { completed: "Completed", no_show: "No-show", cancelled: "Cancelled" };
+const STATUS_LABEL: Record<string, string> = { completed: "Completed", no_show: "Not attended", cancelled: "Cancelled" };
 
 /** Best / Latest / History switcher over a student's attempts in one competency. */
 export function AttemptBrowser({

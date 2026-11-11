@@ -20,8 +20,8 @@ import { Icon } from "./ui";
 
 const STATUS_MESSAGES: Record<string, { title: string; body: string }> = {
   no_show: {
-    title: "You missed this interview",
-    body: "This interview was marked as a no-show, so there's no feedback for it. Reach out to your coordinator to reschedule.",
+    title: "You didn't attend this interview",
+    body: "You didn't join this interview at the scheduled time, so there's no feedback for it. Contact your coordinator to reschedule.",
   },
   cancelled: {
     title: "This interview was cancelled",
