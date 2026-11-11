@@ -4,7 +4,7 @@ import { BookOpen } from "lucide-react";
 import Link from "next/link";
 import { COMPETENCIES, type Competency } from "@/lib/competencies";
 import { formatDate } from "@/lib/report/fields";
-import { getAttempts, isCleared, isScored, type Interview } from "@/lib/report/parse";
+import { getAttempts, isCleared, isScored, type Interview, type StudentData } from "@/lib/report/parse";
 import { useStoredReport } from "@/lib/report/store";
 import { ContentSkeleton } from "@/components/app-header";
 import { NoStoredData, RefetchBar } from "./refetch-bar";
@@ -20,16 +20,12 @@ const BAR_COLOR: Record<string, string> = {
 
 const MAX_CHIPS = 3;
 
+const OPEN_REPORT_CLASS =
+  "flex cursor-pointer items-center gap-2 text-sm font-medium after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-brand sm:text-base";
+
 export function Dashboard({ email, name }: { email: string; name: string }) {
   const data = useStoredReport(email);
   if (data === undefined) return <ContentSkeleton />;
-
-  const cards = data
-    ? COMPETENCIES.map((c) => ({ c, attempts: getAttempts(data, c) }))
-        // Competencies the student has taken come first; config order otherwise.
-        .sort((a, b) => Number(b.attempts.length > 0) - Number(a.attempts.length > 0))
-    : [];
-  const taken = cards.filter((x) => x.attempts.length > 0).length;
 
   return (
     <>
@@ -41,30 +37,41 @@ export function Dashboard({ email, name }: { email: string; name: string }) {
         {data && <RefetchBar fetchedAt={data.fetchedAt} />}
       </div>
 
-      {data === null ? (
-        <NoStoredData />
-      ) : (
-        <section className="mt-8 sm:mt-10">
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 sm:mb-5">
-            <h2 className="font-display text-lg font-semibold tracking-tight sm:text-xl">Competencies Evaluation Matrix</h2>
-            <p className="font-mono text-xs text-subtle sm:text-sm">
-              {taken} of {COMPETENCIES.length} taken
-            </p>
-          </div>
-          <ul className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
-            {cards.map(({ c, attempts }) => (
-              <li key={c.slug}>
-                <CompetencyCard competency={c} attempts={attempts} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {data === null ? <NoStoredData /> : <CompetencyCards data={data} />}
     </>
   );
 }
 
-function CompetencyCard({ competency, attempts }: { competency: Competency; attempts: Interview[] }) {
+/**
+ * The competency cards grid. Shared by the student home page and the admin lookup, so both
+ * always look the same. Students follow links; the admin passes `onOpen` to open a report in place.
+ */
+export function CompetencyCards({ data, onOpen }: { data: StudentData; onOpen?: (slug: string) => void }) {
+  const cards = COMPETENCIES.map((c) => ({ c, attempts: getAttempts(data, c) }))
+    // Competencies the student has taken come first; config order otherwise.
+    .sort((a, b) => Number(b.attempts.length > 0) - Number(a.attempts.length > 0));
+  const taken = cards.filter((x) => x.attempts.length > 0).length;
+
+  return (
+    <section className="mt-8 sm:mt-10">
+      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 sm:mb-5">
+        <h2 className="font-display text-lg font-semibold tracking-tight sm:text-xl">Competencies Evaluation Matrix</h2>
+        <p className="font-mono text-xs text-subtle sm:text-sm">
+          {taken} of {COMPETENCIES.length} taken
+        </p>
+      </div>
+      <ul className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
+        {cards.map(({ c, attempts }) => (
+          <li key={c.slug}>
+            <CompetencyCard competency={c} attempts={attempts} onOpen={onOpen && (() => onOpen(c.slug))} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function CompetencyCard({ competency, attempts, onOpen }: { competency: Competency; attempts: Interview[]; onOpen?: () => void }) {
   const count = attempts.length;
   // Cards show the student's most recent attempt.
   const latest = attempts[0];
@@ -98,9 +105,9 @@ function CompetencyCard({ competency, attempts }: { competency: Competency; atte
           : "Scheduled";
   const pendingNote =
     latest?.status === "no_show"
-      ? "You didn't join this interview, so there's no feedback. Contact your coordinator to reschedule."
+      ? "You didn't join this interview, so there's no feedback."
       : latest?.status === "cancelled"
-        ? "This interview was cancelled. Contact your coordinator to reschedule."
+        ? "This interview was cancelled."
         : null;
 
   return (
@@ -167,13 +174,17 @@ function CompetencyCard({ competency, attempts }: { competency: Competency; atte
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 sm:pt-5">
           <PrepMaterialLink competency={competency} />
           {/* The ::after overlay makes the whole card open the report; the prep material link sits above it. */}
-          <Link
-            href={`/${competency.slug}`}
-            className="flex items-center gap-2 text-sm font-medium after:absolute after:inset-0 after:rounded-2xl sm:text-base"
-          >
-            View report
-            <Icon name="arrowRight" className="size-5 transition-transform group-hover:translate-x-1" />
-          </Link>
+          {onOpen ? (
+            <button type="button" onClick={onOpen} className={OPEN_REPORT_CLASS}>
+              View report
+              <Icon name="arrowRight" className="size-5 transition-transform group-hover:translate-x-1" />
+            </button>
+          ) : (
+            <Link href={`/${competency.slug}`} className={OPEN_REPORT_CLASS}>
+              View report
+              <Icon name="arrowRight" className="size-5 transition-transform group-hover:translate-x-1" />
+            </Link>
+          )}
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { COMPETENCIES } from "@/lib/competencies";
 import { getAttempts, type StudentData } from "@/lib/report/parse";
 import { AttemptBrowser } from "@/components/report/attempt-browser";
+import { CompetencyCards } from "@/components/report/dashboard";
 import { Icon } from "@/components/report/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,13 +35,17 @@ export function AdminDashboard() {
         return;
       }
       setData(result.data ?? null);
-      const first = COMPETENCIES.find((c) => result.data && getAttempts(result.data, c).length > 0);
-      setSlug(first?.slug ?? null);
+      // Start on the competency cards, the same page the student sees after signing in.
+      setSlug(null);
     });
   };
 
-  const competencies = data ? COMPETENCIES.map((c) => ({ c, attempts: getAttempts(data, c) })).filter((x) => x.attempts.length > 0) : [];
-  const current = competencies.find((x) => x.c.slug === slug) ?? competencies[0];
+  const open = (next: string | null) => {
+    setSlug(next);
+    window.scrollTo({ top: 0 });
+  };
+  const current = data && slug ? COMPETENCIES.find((c) => c.slug === slug) : undefined;
+  const attempts = data && current ? getAttempts(data, current) : [];
 
   return (
     <div className="space-y-6">
@@ -72,39 +77,46 @@ export function AdminDashboard() {
         )}
       </section>
 
-      {data && current && (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {competencies.map(({ c, attempts }) => {
-              const active = c.slug === current.c.slug;
-              return (
-                <Button
-                  key={c.slug}
-                  type="button"
-                  size="sm"
-                  variant={active ? "default" : "outline"}
-                  aria-pressed={active}
-                  onClick={() => setSlug(c.slug)}
-                  className="rounded-full"
-                >
-                  {c.title} · {attempts.length}
-                </Button>
-              );
-            })}
+      {data && (
+        <div>
+          <div className="min-w-0">
+            <h2 className="break-words text-xl font-semibold tracking-tight sm:text-3xl">{data.name || data.email}</h2>
+            <p className="mt-1 break-all font-mono text-sm text-subtle">{data.email}</p>
           </div>
-          <div ref={setActionsSlot} className="no-print flex flex-wrap items-center gap-2" />
-          </div>
-          {/* key resets the attempt view when switching student or competency */}
-          <AttemptBrowser
-            key={`${data.email}-${current.c.slug}`}
-            competency={current.c}
-            attempts={current.attempts}
-            name={data.name}
-            email={data.email}
-            actionsSlot={actionsSlot}
-          />
-        </>
+
+          {current ? (
+            // Same layout as the student's competency page, with admin-only details included.
+            <div className="mt-6 space-y-6">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <button type="button" onClick={() => open(null)} className="no-print text-sm text-subtle hover:text-ink">
+                    ← All competencies
+                  </button>
+                  <p className="mt-2 text-sm font-medium text-subtle">{current.title}</p>
+                </div>
+                <div ref={setActionsSlot} className="no-print flex flex-wrap items-center gap-2" />
+              </div>
+              {attempts.length === 0 ? (
+                <section className="rounded-2xl border border-line bg-surface p-8 text-center">
+                  <p className="font-medium">No {current.title} interview yet</p>
+                  <p className="mt-1 text-sm text-subtle">This student hasn&apos;t taken this interview.</p>
+                </section>
+              ) : (
+                // key resets the attempt view when switching student or competency
+                <AttemptBrowser
+                  key={`${data.email}-${current.slug}`}
+                  competency={current}
+                  attempts={attempts}
+                  name={data.name}
+                  email={data.email}
+                  actionsSlot={actionsSlot}
+                />
+              )}
+            </div>
+          ) : (
+            <CompetencyCards data={data} onOpen={open} />
+          )}
+        </div>
       )}
     </div>
   );
