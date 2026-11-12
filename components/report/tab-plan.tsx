@@ -60,24 +60,33 @@ function useDoneTasks(storageKey: string) {
 }
 
 function toMarkdown(weeks: AiWeek[], heading: string, done: string[], name: string): string {
-  const total = weeks.reduce((n, w) => n + w.tasks.length, 0);
+  const total = weeks.reduce((n, w) => n + w.tasks.length + w.questions.length, 0);
   const completed = done.length;
-  const lines = [`# ${heading}${name ? ` for ${name}` : ""}`, "", `Progress: ${completed}/${total} tasks completed`, ""];
+  const lines = [`# ${heading}${name ? ` for ${name}` : ""}`, "", `Progress: ${completed}/${total} completed (tasks and practice questions)`, ""];
   for (const w of weeks) {
     lines.push(`## Week ${w.week}: ${w.focus}`, "");
     if (w.target) lines.push(`**Target:** ${w.target}`, "");
     if (w.why) lines.push(`**Why it matters:** ${w.why}`, "");
     if (w.tasks.length) lines.push("### Tasks & daily drills", ...w.tasks.map((t, i) => `- [${done.includes(`${w.week}:${i}`) ? "x" : " "}] ${t}`), "");
-    if (w.questions.length) lines.push("### Practice questions", ...w.questions.map((q, i) => `${i + 1}. ${q.link ? `[${q.name}](${q.link})` : q.name}`), "");
+    if (w.questions.length)
+      lines.push(
+        "### Practice questions",
+        ...w.questions.map((q, i) => `- [${done.includes(questionId(w.week, i)) ? "x" : " "}] ${q.link ? `[${q.name}](${q.link})` : q.name}`),
+        "",
+      );
     lines.push("---", "");
   }
   return lines.join("\n");
 }
 
+/** Ticked practice questions share the task store; their ids are prefixed so they never collide with tasks. */
+const questionId = (week: number, index: number) => `q:${week}:${index}`;
+
 export function PlanTab({ weeks, storageKey, subtitle, name }: { weeks: AiWeek[]; storageKey: string; subtitle: string; name: string }) {
   const { done, toggle, clear } = useDoneTasks(storageKey);
   const [confirmReset, setConfirmReset] = useState(false);
-  const validIds = weeks.flatMap((w) => w.tasks.map((_, i) => `${w.week}:${i}`));
+  // One combined progress figure for tasks and practice questions.
+  const validIds = weeks.flatMap((w) => [...w.tasks.map((_, i) => `${w.week}:${i}`), ...w.questions.map((_, i) => questionId(w.week, i))]);
   const doneValid = done.filter((id) => validIds.includes(id));
   const total = validIds.length;
   const completed = doneValid.length;
@@ -139,14 +148,17 @@ export function PlanTab({ weeks, storageKey, subtitle, name }: { weeks: AiWeek[]
             <p className="text-xs font-medium text-slate-700">
               Roadmap Completion Progress:{" "}
               <span className="font-mono font-semibold tabular-nums text-ink">
-                {completed} of {total} tasks completed
+                {completed} of {total} completed
               </span>
             </p>
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 sm:w-72" aria-hidden>
               <div className="h-full bg-emerald-600 transition-all duration-300" style={{ width: `${pct}%` }} />
             </div>
           </div>
-          <p className="font-mono text-2xl font-bold tabular-nums sm:text-right">{pct}%</p>
+          <div className="sm:text-right">
+            <p className="font-mono text-2xl font-bold tabular-nums">{pct}%</p>
+            <p className="text-[11px] text-subtle">Tasks &amp; practice questions</p>
+          </div>
         </div>
       )}
 
@@ -212,7 +224,14 @@ export function PlanTab({ weeks, storageKey, subtitle, name }: { weeks: AiWeek[]
                 <ol className="space-y-2">
                   {w.questions.map((q, i) => (
                     <li key={i}>
-                      <PracticeQuestionRow index={i + 1} name={q.name} link={q.link} onOpen={() => trackPracticeClick({ name: q.name, link: q.link, week: w.week })} />
+                      <PracticeQuestionRow
+                        index={i + 1}
+                        name={q.name}
+                        link={q.link}
+                        checked={done.includes(questionId(w.week, i))}
+                        onToggle={() => toggle(questionId(w.week, i))}
+                        onOpen={() => trackPracticeClick({ name: q.name, link: q.link, week: w.week })}
+                      />
                     </li>
                   ))}
                 </ol>
@@ -225,32 +244,58 @@ export function PlanTab({ weeks, storageKey, subtitle, name }: { weeks: AiWeek[]
   );
 }
 
-/** One practice question: opens the question in a new tab when it has a link. */
-function PracticeQuestionRow({ index, name, link, onOpen }: { index: number; name: string; link: string; onOpen: () => void }) {
-  const body = (
-    <span className="flex min-w-0 items-start gap-2">
-      <span className="font-mono text-xs leading-5 text-subtle sm:leading-6">{index}.</span>
-      <span className="min-w-0 break-words text-xs leading-5 text-slate-800 sm:text-sm sm:leading-6">{name}</span>
-    </span>
-  );
-  if (!link) return <div className="rounded-md border border-line bg-white px-3 py-2">{body}</div>;
+/** One practice question: tick it once solved; Solve opens the question in a new tab. */
+function PracticeQuestionRow({
+  index,
+  name,
+  link,
+  checked,
+  onToggle,
+  onOpen,
+}: {
+  index: number;
+  name: string;
+  link: string;
+  checked: boolean;
+  onToggle: () => void;
+  onOpen: () => void;
+}) {
   return (
-    <a
-      href={link}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={onOpen}
-      onAuxClick={(e) => {
-        if (e.button === 1) onOpen(); // middle-click opens it too
-      }}
-      className="group flex items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 transition hover:border-slate-300 hover:bg-slate-50"
+    <div
+      className={`flex items-center justify-between gap-3 rounded border transition-colors ${
+        checked ? "border-emerald-200 bg-emerald-50/50" : "border-line bg-white hover:border-slate-300"
+      }`}
     >
-      {body}
-      <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700">
-        <span className="underline decoration-blue-600/60 underline-offset-2 group-hover:decoration-blue-700">Solve</span>
-        <ExternalLink aria-hidden className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-        <span className="sr-only">(opens in a new tab)</span>
-      </span>
-    </a>
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={checked}
+        aria-label={`Mark "${name}" as solved`}
+        onClick={onToggle}
+        className="flex min-w-0 flex-1 select-none items-start gap-3 p-3 text-left"
+      >
+        <Icon name={checked ? "check" : "circle"} className={`mt-0.5 size-4 shrink-0 ${checked ? "text-emerald-600" : "text-slate-400"}`} />
+        <span className={`min-w-0 break-words text-xs leading-relaxed sm:text-sm ${checked ? "text-slate-600 line-through" : "text-slate-800"}`}>
+          <span className="mr-1.5 font-mono text-subtle">{index}.</span>
+          {name}
+        </span>
+      </button>
+      {link && (
+        <a
+          href={link}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onOpen}
+          onAuxClick={(e) => {
+            if (e.button === 1) onOpen(); // middle-click opens it too
+          }}
+          className="group mr-3 inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+        >
+          <span className="underline decoration-blue-600/60 underline-offset-2 group-hover:decoration-blue-700">Solve</span>
+          <ExternalLink aria-hidden className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          <span className="sr-only">(opens in a new tab)</span>
+        </a>
+      )}
+    </div>
   );
 }
