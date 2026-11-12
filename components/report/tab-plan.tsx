@@ -1,8 +1,10 @@
 "use client";
 
+import { ExternalLink } from "lucide-react";
 import { useCallback, useState, useSyncExternalStore } from "react";
 import type { AiWeek } from "@/lib/report/ai";
 import { Button } from "@/components/ui/button";
+import { trackPracticeClick } from "@/lib/analytics/tracker";
 import { Icon } from "./ui";
 
 // Ticked tasks are a per-student convenience, kept in this browser only.
@@ -66,7 +68,7 @@ function toMarkdown(weeks: AiWeek[], heading: string, done: string[], name: stri
     if (w.target) lines.push(`**Target:** ${w.target}`, "");
     if (w.why) lines.push(`**Why it matters:** ${w.why}`, "");
     if (w.tasks.length) lines.push("### Tasks & daily drills", ...w.tasks.map((t, i) => `- [${done.includes(`${w.week}:${i}`) ? "x" : " "}] ${t}`), "");
-    if (w.questions.length) lines.push("### Practice questions", ...w.questions.map((q, i) => `${i + 1}. ${q}`), "");
+    if (w.questions.length) lines.push("### Practice questions", ...w.questions.map((q, i) => `${i + 1}. ${q.link ? `[${q.name}](${q.link})` : q.name}`), "");
     lines.push("---", "");
   }
   return lines.join("\n");
@@ -207,9 +209,11 @@ export function PlanTab({ weeks, storageKey, subtitle, name }: { weeks: AiWeek[]
             {w.questions.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">Practice Questions</p>
-                <ol className="list-decimal space-y-1.5 pl-5 text-xs leading-relaxed text-slate-800 sm:text-sm">
+                <ol className="space-y-2">
                   {w.questions.map((q, i) => (
-                    <li key={i}>{q}</li>
+                    <li key={i}>
+                      <PracticeQuestionRow index={i + 1} name={q.name} link={q.link} onOpen={() => trackPracticeClick({ name: q.name, link: q.link, week: w.week })} />
+                    </li>
                   ))}
                 </ol>
               </div>
@@ -218,5 +222,35 @@ export function PlanTab({ weeks, storageKey, subtitle, name }: { weeks: AiWeek[]
         ))}
       </div>
     </div>
+  );
+}
+
+/** One practice question: opens the question in a new tab when it has a link. */
+function PracticeQuestionRow({ index, name, link, onOpen }: { index: number; name: string; link: string; onOpen: () => void }) {
+  const body = (
+    <span className="flex min-w-0 items-start gap-2">
+      <span className="font-mono text-xs leading-5 text-subtle sm:leading-6">{index}.</span>
+      <span className="min-w-0 break-words text-xs leading-5 text-slate-800 sm:text-sm sm:leading-6">{name}</span>
+    </span>
+  );
+  if (!link) return <div className="rounded-md border border-line bg-white px-3 py-2">{body}</div>;
+  return (
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={onOpen}
+      onAuxClick={(e) => {
+        if (e.button === 1) onOpen(); // middle-click opens it too
+      }}
+      className="group flex items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      {body}
+      <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-blue-600 group-hover:text-blue-700">
+        <span className="underline decoration-blue-600/60 underline-offset-2 group-hover:decoration-blue-700">Solve</span>
+        <ExternalLink aria-hidden className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+        <span className="sr-only">(opens in a new tab)</span>
+      </span>
+    </a>
   );
 }

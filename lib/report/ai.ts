@@ -6,6 +6,9 @@ export type TopicResult = "correct" | "partial" | "wrong" | "dont_know" | "no_an
 
 export type AiTopic = { topic: string; result: TopicResult; hint: boolean };
 
+/** A practice question; `link` is empty when the report gives only the name. */
+export type PracticeQuestion = { name: string; link: string };
+
 export type ConceptStatus = "strong" | "partly_there" | "needs_work" | "not_yet_familiar";
 
 export type AiConcept = {
@@ -14,7 +17,7 @@ export type AiConcept = {
   wentWell: string;
   gap: string;
   workOn: string;
-  questions: string[];
+  questions: PracticeQuestion[];
 };
 
 export type AiDomain = {
@@ -37,7 +40,7 @@ export type AiWeek = {
   why: string;
   target: string;
   tasks: string[];
-  questions: string[];
+  questions: PracticeQuestion[];
 };
 
 export type AiReport = {
@@ -74,7 +77,7 @@ function concept(v: unknown): AiConcept | null {
     wentWell: text(v.what_went_well),
     gap: text(v.the_gap),
     workOn: text(v.what_to_work_on),
-    questions: list(v.practice_questions),
+    questions: practiceQuestions(v.practice_questions),
   };
 }
 
@@ -90,6 +93,25 @@ function text(v: unknown): string {
 function list(v: unknown): string[] {
   const items = Array.isArray(v) ? v.map(text) : text(v).split(/\s+\|\s+/);
   return items.map((s) => s.trim()).filter(Boolean);
+}
+
+/** Only web links are kept, so a report can never inject a javascript: or other unsafe URL. */
+function safeLink(v: unknown): string {
+  const s = text(v);
+  try {
+    const url = new URL(s);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Practice questions come as `{ name, link }` objects; older reports use plain strings. */
+function practiceQuestions(v: unknown): PracticeQuestion[] {
+  if (!Array.isArray(v)) return list(v).map((name) => ({ name, link: "" }));
+  return v
+    .map((q): PracticeQuestion => (isObject(q) ? { name: text(q.name) || text(q.title), link: safeLink(q.link ?? q.url) } : { name: text(q), link: "" }))
+    .filter((q) => q.name);
 }
 
 function rating(v: unknown): number | null {
@@ -150,7 +172,7 @@ export function normalizeAiReport(raw: string, { includeInternal = false } = {})
     why: text(w.why),
     target: text(w.target),
     tasks: list(w.tasks),
-    questions: list(w.practice_questions),
+    questions: practiceQuestions(w.practice_questions),
   }));
 
   return {
