@@ -59,7 +59,8 @@ export async function recordLogin(input: {
 export type TrackEvent =
   | { t: "pageview"; path: string }
   | { t: "report"; viewId: string; competency: string; reportKey: string }
-  | { t: "active"; ms: number; reportViewId?: string; section?: string };
+  | { t: "active"; ms: number; reportViewId?: string; section?: string }
+  | { t: "practice"; reportViewId: string; name: string; link: string; week: number };
 
 /** Report tabs whose viewing time is tracked. */
 export const REPORT_SECTIONS = ["overview", "domains", "concepts", "plan"] as const;
@@ -72,6 +73,16 @@ const MAX_ACTIVE_MS_PER_EVENT = 2 * 60 * 1000;
 
 function clean(text: unknown, max: number): string {
   return typeof text === "string" ? text.slice(0, max) : "";
+}
+
+/** Keeps only http(s) links, since admins open these from the dashboard. */
+function cleanLink(link: unknown): string {
+  try {
+    const url = new URL(clean(link, 500));
+    return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
 }
 
 export async function recordEvents(studentId: string, payload: TrackPayload, userAgent: string | null): Promise<void> {
@@ -138,6 +149,16 @@ export async function recordEvents(studentId: string, payload: TrackPayload, use
           );
         }
       }
+    } else if (e.t === "practice" && isUuid(e.reportViewId)) {
+      const name = clean(e.name, 300).trim();
+      if (!name) continue;
+      const week = Number.isInteger(e.week) && e.week > 0 && e.week < 100 ? e.week : null;
+      // Only for the student's own report view; competency and report come from that view.
+      await d.query(
+        `INSERT INTO skilllens.practice_clicks (student_id, session_id, report_view_id, competency, report_key, question, link, week)
+         SELECT student_id, $3, id, competency, report_key, $4, $5, $6 FROM skilllens.report_views WHERE id = $1 AND student_id = $2`,
+        [e.reportViewId, studentId, payload.sessionId, name, cleanLink(e.link), week],
+      );
     }
   }
 }

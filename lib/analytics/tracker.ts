@@ -152,6 +152,13 @@ export function trackReportOpen(competency: string, reportKey: string): () => vo
   };
 }
 
+/** Records a click on a practice question in the open report's prep plan. Sent right away, as the link opens a new tab. */
+export function trackPracticeClick(question: { name: string; link: string; week: number }): void {
+  if (!state.started || !state.reportViewId) return;
+  state.queue.push({ t: "practice", reportViewId: state.reportViewId, ...question });
+  flush();
+}
+
 /** Records which report tab is open; earlier time is flushed to the previous tab first. */
 export function trackReportSection(section: string): void {
   if (!state.started || state.section === section) return;

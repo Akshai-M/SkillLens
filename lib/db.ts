@@ -92,6 +92,22 @@ CREATE TABLE IF NOT EXISTS skilllens.report_section_time (
 );
 CREATE INDEX IF NOT EXISTS report_section_time_student_idx ON skilllens.report_section_time (student_id);
 
+-- Clicks on practice questions in a report's prep plan.
+CREATE TABLE IF NOT EXISTS skilllens.practice_clicks (
+  id bigserial PRIMARY KEY,
+  student_id uuid NOT NULL REFERENCES skilllens.students(id),
+  session_id uuid NOT NULL,
+  report_view_id uuid NOT NULL REFERENCES skilllens.report_views(id),
+  competency text NOT NULL,
+  report_key text NOT NULL,
+  question text NOT NULL,
+  link text NOT NULL DEFAULT '',
+  week int,
+  clicked_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS practice_clicks_student_idx ON skilllens.practice_clicks (student_id, clicked_at);
+CREATE INDEX IF NOT EXISTS practice_clicks_clicked_idx ON skilllens.practice_clicks (clicked_at);
+
 CREATE TABLE IF NOT EXISTS skilllens.logins (
   id bigserial PRIMARY KEY,
   student_id uuid REFERENCES skilllens.students(id),
