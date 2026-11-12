@@ -35,9 +35,15 @@ export type StudentActivity = {
   sectionByCompetencyMs: Record<string, Record<ReportSection, number>>;
   /** Active time per report tab, for report views opened in the range. */
   sectionMs: Record<ReportSection, number>;
+  /** Practice question clicks in the range, and how many different questions they were on. */
+  practiceClicks: number;
+  practiceQuestions: number;
+  lastPracticeClick: number | null;
   status: "active" | "inactive";
   type: "new" | "returning" | null;
 };
+
+export type PracticeQuestionStat = { question: string; competency: string; link: string; clicks: number; students: number; lastClick: number | null };
 
 export type Bucket = { bucket: string; visitors: number; visits: number; newVisitors: number; returningVisitors: number };
 export type Breakdown = { label: string; users: number; sessions: number };
@@ -92,6 +98,7 @@ export type Analytics = {
   };
   devices: { deviceTypes: Breakdown[]; browsers: Breakdown[]; os: Breakdown[] };
   sections: { section: ReportSection; totalMs: number; students: number; views: number; avgPerStudentMs: number }[];
+  practice: { clicks: number; students: number; questions: number; topQuestions: PracticeQuestionStat[] };
   auth: {
     successes: number;
     failures: number;
@@ -152,7 +159,7 @@ export async function getAnalytics(filters: AnalyticsFilters): Promise<Analytics
     })),
   };
 
-  const [visitRows, sessionRows, reportRows, lastReportRows, loginRows, trendRows, hourRows, retentionRows, deviceRows, browserRows, osRows, authRow, reasonRows, lastLoginRow, perReportRows, sectionRows, competencyRows] =
+  const [visitRows, sessionRows, reportRows, lastReportRows, loginRows, trendRows, hourRows, retentionRows, deviceRows, browserRows, osRows, authRow, reasonRows, lastLoginRow, perReportRows, sectionRows, competencyRows, practiceStudentRows, practiceQuestionRows] =
     await Promise.all([
       d.query(
         `SELECT s.email, s.name,
@@ -252,6 +259,20 @@ export async function getAnalytics(filters: AnalyticsFilters): Promise<Analytics
          GROUP BY s.email, r.competency`,
         p,
       ),
+      d.query(
+        `SELECT s.email, count(*)::int AS clicks, count(DISTINCT c.question)::int AS questions, max(c.clicked_at) AS last_click
+         FROM skilllens.practice_clicks c JOIN skilllens.students s ON s.id = c.student_id
+         WHERE ${IN_RANGE("c.clicked_at")} GROUP BY s.email`,
+        p,
+      ),
+      d.query(
+        `SELECT c.question, c.competency, max(c.link) AS link, count(*)::int AS clicks,
+           count(DISTINCT c.student_id)::int AS students, max(c.clicked_at) AS last_click
+         FROM skilllens.practice_clicks c
+         WHERE ${IN_RANGE("c.clicked_at")}
+         GROUP BY c.question, c.competency ORDER BY clicks DESC, students DESC, c.question`,
+        p,
+      ),
     ]);
 
   // ---- Student-wise activity ------------------------------------------------
@@ -276,6 +297,9 @@ export async function getAnalytics(filters: AnalyticsFilters): Promise<Analytics
   for (const r of reportRows) get(String(r.email)).reportsViewed = num(r.reports_viewed);
   for (const r of lastReportRows) get(String(r.email)).lastReport = { competency: String(r.competency), at: ms(r.opened_at)! };
   for (const r of loginRows) get(String(r.email)).lastLogin = ms(r.last_login);
+  for (const r of practiceStudentRows) {
+    Object.assign(get(String(r.email)), { practiceClicks: num(r.clicks), practiceQuestions: num(r.questions), lastPracticeClick: ms(r.last_click) });
+  }
   for (const r of competencyRows) {
     const a = get(String(r.email));
     a.competencyMs ??= {};
@@ -321,6 +345,9 @@ export async function getAnalytics(filters: AnalyticsFilters): Promise<Analytics
       sectionByCompetencyMs: a.sectionByCompetencyMs ?? {},
       competencyMs: a.competencyMs ?? {},
       competencies: [...new Set([...(competenciesByEmail.get(a.email) ?? []), ...Object.keys(a.competencyMs ?? {})])],
+      practiceClicks: a.practiceClicks ?? 0,
+      practiceQuestions: a.practiceQuestions ?? 0,
+      lastPracticeClick: a.lastPracticeClick ?? null,
       status: a.lastVisit && a.lastVisit >= inactiveBefore ? "active" : "inactive",
       type: visits === 0 || firstVisit === null ? null : firstVisit >= from ? "new" : "returning",
     };
@@ -447,6 +474,19 @@ export async function getAnalytics(filters: AnalyticsFilters): Promise<Analytics
       const students = new Set(rows.filter((r) => num(r.ms) > 0).map((r) => String(r.email))).size;
       return { section, totalMs, students, views: rows.reduce((t, r) => t + num(r.views), 0), avgPerStudentMs: students ? totalMs / students : 0 };
     }),
+    practice: {
+      clicks: practiceStudentRows.reduce((t, r) => t + num(r.clicks), 0),
+      students: practiceStudentRows.length,
+      questions: new Set(practiceQuestionRows.map((r) => String(r.question))).size,
+      topQuestions: practiceQuestionRows.map((r) => ({
+        question: String(r.question),
+        competency: competencyTitle.get(String(r.competency)) ?? String(r.competency),
+        link: String(r.link ?? ""),
+        clicks: num(r.clicks),
+        students: num(r.students),
+        lastClick: ms(r.last_click),
+      })),
+    },
     auth: {
       successes: ok,
       failures: failed,

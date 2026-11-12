@@ -214,6 +214,52 @@ async function Dashboard({ filters }: { filters: AnalyticsFilters }) {
         />
       </Section>
 
+      {/* Practice questions */}
+      <Section title="Practice questions" note="Clicks on practice questions in students' prep plans, in the selected range.">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Stat label="Total clicks" value={a.practice.clicks} />
+          <Stat label="Students who clicked" value={a.practice.students} />
+          <Stat label="Questions clicked" value={a.practice.questions} hint="Different questions opened" />
+          <Stat label="Avg clicks per student" value={formatNumber(a.practice.students ? a.practice.clicks / a.practice.students : 0, 1)} hint="Among students who clicked" />
+        </div>
+        <h3 className="mb-3 mt-6 text-sm font-semibold">Most clicked questions</h3>
+        <Table
+          head={["Question", "Competency", "Clicks", "Students", "Last click"]}
+          empty="No practice question clicks in this range."
+          rows={a.practice.topQuestions.map((q) => [
+            q.link ? (
+              <a key="q" href={q.link} target="_blank" rel="noopener noreferrer" className="font-medium text-ink underline-offset-4 hover:underline">
+                {q.question}
+              </a>
+            ) : (
+              <span key="q" className="font-medium text-ink">
+                {q.question}
+              </span>
+            ),
+            q.competency || "—",
+            formatNumber(q.clicks),
+            formatNumber(q.students),
+            formatIst(q.lastClick),
+          ])}
+        />
+        <h3 className="mb-3 mt-6 text-sm font-semibold">By student</h3>
+        <Table
+          head={["Student", "Clicks", "Questions", "Last click"]}
+          empty="No practice question clicks in this range."
+          rows={a.students
+            .filter((s) => s.practiceClicks > 0)
+            .sort((x, y) => y.practiceClicks - x.practiceClicks || x.email.localeCompare(y.email))
+            .map((s) => [
+              <span key="e" className="font-medium text-ink">
+                {s.email}
+              </span>,
+              formatNumber(s.practiceClicks),
+              formatNumber(s.practiceQuestions),
+              formatIst(s.lastPracticeClick),
+            ])}
+        />
+      </Section>
+
       {/* 6. Authentication */}
       <Section title="Authentication" note="Sign-in attempts in the selected range.">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

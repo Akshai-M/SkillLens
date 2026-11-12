@@ -119,6 +119,7 @@ type Filters = {
   sessions: NumberCondition;
   activeDays: NumberCondition;
   reportsViewed: NumberCondition;
+  practiceClicks: NumberCondition;
   avgSession: NumberCondition;
   firstVisit: DateCondition;
   lastVisit: DateCondition;
@@ -136,6 +137,7 @@ const EMPTY: Filters = {
   sessions: anyNumber(),
   activeDays: anyNumber(),
   reportsViewed: anyNumber(),
+  practiceClicks: anyNumber(),
   avgSession: anyNumber("min"),
   firstVisit: anyDate(),
   lastVisit: anyDate(),
@@ -154,6 +156,7 @@ function applyFilters(students: StudentActivity[], f: Filters): StudentActivity[
       matchNumber(s.sessions, f.sessions) &&
       matchNumber(s.activeDays, f.activeDays) &&
       matchNumber(s.reportsViewed, f.reportsViewed) &&
+      matchNumber(s.practiceClicks, f.practiceClicks) &&
       matchNumber(s.avgSessionMs, f.avgSession) &&
       matchDate(s.firstVisit, f.firstVisit) &&
       matchDate(s.lastVisit, f.lastVisit) &&
@@ -249,6 +252,7 @@ export function StudentTable({ students }: { students: StudentActivity[] }) {
           <NumberField id="t-sessions" label="Sessions" value={f.sessions} onChange={set("sessions")} />
           <NumberField id="t-days" label="Active days" value={f.activeDays} onChange={set("activeDays")} />
           <NumberField id="t-reports" label="Reports viewed" value={f.reportsViewed} onChange={set("reportsViewed")} />
+          <NumberField id="t-practice" label="Practice question clicks" value={f.practiceClicks} onChange={set("practiceClicks")} />
           <NumberField id="t-avg" label="Avg session duration" value={f.avgSession} onChange={set("avgSession")} />
         </FilterGroup>
 
@@ -450,6 +454,7 @@ function Table({ filtered }: { filtered: StudentActivity[] }) {
     "Time by competency",
     "Frequency",
     "Reports viewed",
+    "Practice clicks",
     "Last report viewed",
   ];
   return (
@@ -497,6 +502,14 @@ function Table({ filtered }: { filtered: StudentActivity[] }) {
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5">{s.frequency}</td>
                 <td className="px-3 py-2.5 font-mono tabular-nums">{formatNumber(s.reportsViewed)}</td>
+                <td className="whitespace-nowrap px-3 py-2.5">
+                  <span className="font-mono tabular-nums">{formatNumber(s.practiceClicks)}</span>
+                  {s.practiceClicks > 0 && (
+                    <span className="block text-xs text-subtle">
+                      {s.practiceQuestions} {s.practiceQuestions === 1 ? "question" : "questions"}
+                    </span>
+                  )}
+                </td>
                 <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">
                   {s.lastReport ? (
                     <>
