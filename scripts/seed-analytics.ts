@@ -47,6 +47,12 @@ const DEVICES = [
   [["tablet", "Safari", "iOS"], 3],
 ] as const;
 /** Visit cadence: chance of visiting on any given day. */
+const PRACTICE: Record<string, string[]> = {
+  "frontend-development": ["Todo List with Local Storage", "Debounced Search Input", "Responsive Navbar – Flexbox", "Star Rating Component – React"],
+  dsa: ["Join Words in Sentence – Arrays & Strings", "Two Sum – Hashing", "Merge Intervals – Sorting", "Valid Parentheses – Stacks"],
+  "backend-development": ["Paginated REST API – Express", "JWT Auth Middleware", "SQL Joins – Orders & Customers"],
+  "se-fundamentals": ["Git Merge Conflicts", "HTTP Status Codes Quiz", "Process vs Thread"],
+};
 const PROFILES = [[0.75, 5], [0.25, 12], [0.06, 15], [0, 4]] as const;
 
 /** A time on the given day at an IST hour weighted towards evenings. */
@@ -64,7 +70,7 @@ async function main() {
   await d.exec("BEGIN");
   // Clear previous demo rows first so re-seeding is idempotent.
   const demo = `(SELECT id FROM skilllens.students WHERE email LIKE '%${DOMAIN}')`;
-  for (const table of ["report_section_time", "report_views", "page_views", "visits", "sessions", "reports"]) {
+  for (const table of ["practice_clicks", "report_section_time", "report_views", "page_views", "visits", "sessions", "reports"]) {
     await d.query(`DELETE FROM skilllens.${table} WHERE student_id IN ${demo}`);
   }
   await d.query(`DELETE FROM skilllens.logins WHERE email LIKE '%${DOMAIN}'`);
@@ -76,7 +82,7 @@ async function main() {
     return;
   }
 
-  const counts = { students: 0, reports: 0, sessions: 0, visits: 0, reportViews: 0, logins: 0 };
+  const counts = { students: 0, reports: 0, sessions: 0, visits: 0, reportViews: 0, practiceClicks: 0, logins: 0 };
   for (let i = 0; i < 40; i++) {
     const name = `${FIRST[i % FIRST.length]} ${LAST[(i * 7) % LAST.length]}`;
     const email = `${name.toLowerCase().replace(" ", ".")}${i}${DOMAIN}`;
@@ -167,6 +173,16 @@ async function main() {
             viewMs += ms;
           }
           await d.query(`UPDATE skilllens.report_views SET active_ms = $2, last_seen_at = $3 WHERE id = $1`, [viewId, viewMs, ts(openedAt + viewMs)]);
+          // Some students open practice questions from the prep plan.
+          for (let q = rand() < 0.4 ? int(1, 3) : 0; q > 0; q--) {
+            const question = pick(PRACTICE[r.competency]);
+            await d.query(
+              `INSERT INTO skilllens.practice_clicks (student_id, session_id, report_view_id, competency, report_key, question, link, week, clicked_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+              [id, sessionId, viewId, r.competency, r.key, question, `https://learning.ccbp.in/question/demo-${PRACTICE[r.competency].indexOf(question)}`, int(1, 4), ts(openedAt + viewMs)],
+            );
+            counts.practiceClicks++;
+          }
           visitMs += viewMs;
           counts.reportViews++;
         }
