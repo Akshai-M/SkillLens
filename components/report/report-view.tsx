@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { FileDown } from "lucide-react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Competency } from "@/lib/competencies";
 import { formatDate } from "@/lib/report/fields";
 import { isCleared, levelStatus, type Interview } from "@/lib/report/parse";
 import { trackReportOpen, trackReportSection } from "@/lib/analytics/tracker";
-import { exportReportPdf } from "@/lib/report/pdf";
+import { downloadMarkdown, reportToMarkdown } from "./export-markdown";
 import { ReportHero } from "./report-hero";
 import { SetupSection, SheetReport } from "./sheet-report";
 import { AuditTab } from "./tab-audit";
@@ -15,7 +16,6 @@ import { DomainsTab } from "./tab-domains";
 import { PlanTab } from "./tab-plan";
 import { CopyButton, SummaryTab } from "./tab-summary";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { Icon } from "./ui";
 
 const STATUS_MESSAGES: Record<string, { title: string; body: string }> = {
@@ -53,9 +53,6 @@ export function ReportView({
   const [tab, setTab] = useState<TabId>("overview");
   const [selectedDomain, setSelectedDomain] = useState<string | undefined>();
   const [rawOpen, setRawOpen] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
 
   // Record a report view (and its viewing time) for released reports a student opens.
   // Admin lookups carry `interview.admin` and are never counted.
@@ -108,23 +105,19 @@ export function ReportView({
     setTab("plan");
     requestAnimationFrame(() => document.getElementById("report-tabs")?.scrollIntoView({ behavior: "smooth" }));
   };
-  const downloadPdf = async () => {
-    if (!rootRef.current || exporting) return;
-    setExportError(null);
-    setExporting(true);
-    try {
-      const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      await exportReportPdf(
-        rootRef.current,
-        `${slug(name) || "interview"}-${competency.slug}-attempt-${interview.attemptNo}-report.pdf`,
-        `${competency.title} · ${name}`,
-      );
-    } catch {
-      setExportError("Couldn't create the PDF. Please try again.");
-    } finally {
-      setExporting(false);
-    }
+  // Download (.md): the student-visible report only, never admin-only details.
+  const exportMarkdown = () => {
+    const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    downloadMarkdown(
+      reportToMarkdown({ interview, competency, name, email }),
+      `${slug(name) || "interview"}-${competency.slug}-attempt-${interview.attemptNo}-report.md`,
+    );
   };
+  const markdownButton = (
+    <Button type="button" size="sm" onClick={exportMarkdown}>
+      <FileDown aria-hidden /> Download (.md)
+    </Button>
+  );
 
   const rawButton = isAdmin && (
     <Button type="button" variant="outline" size="sm" onClick={() => setRawOpen(true)}>
@@ -132,33 +125,7 @@ export function ReportView({
       <span className="rounded-full bg-amber-soft px-1.5 text-[10px] font-semibold uppercase tracking-wider text-amber">Admin only</span>
     </Button>
   );
-  const printButton = (
-    <Button type="button" size="sm" onClick={downloadPdf} disabled={exporting}>
-      {exporting ? <Spinner /> : <Icon name="download" />}
-      {exporting ? "Preparing PDF" : "Download PDF"}
-    </Button>
-  );
-
   const rawModal = rawOpen && <RawDataModal interview={interview} onClose={() => setRawOpen(false)} />;
-  const exportOverlay = (exporting || exportError) && (
-    <div className="no-print fixed inset-x-0 z-50 flex justify-center px-4" style={{ bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" }} role="status" aria-live="polite">
-      <div className="flex items-center gap-3 rounded-lg bg-slate-900 px-4 py-3 text-sm text-white shadow-xl">
-        {exporting ? (
-          <>
-            <Spinner />
-            Preparing your PDF
-          </>
-        ) : (
-          <>
-            {exportError}
-            <Button type="button" variant="link" size="sm" onClick={() => setExportError(null)} className="h-auto p-0 text-white/80 hover:text-white">
-              Dismiss
-            </Button>
-          </>
-        )}
-      </div>
-    </div>
-  );
 
   if (!s) {
     return (
@@ -167,11 +134,11 @@ export function ReportView({
           createPortal(
             <div className="flex items-center gap-3">
               {rawButton}
-              {printButton}
+              {markdownButton}
             </div>,
             slot,
           )}
-        <div ref={rootRef} className="space-y-8">
+        <div className="space-y-8">
           <ReportHero interview={interview} competency={competency} name={name} email={email} focusCount={focusCount} />
           <div data-pdf-page>
             <SheetReport interview={interview} />
@@ -183,7 +150,6 @@ export function ReportView({
           )}
         </div>
         {rawModal}
-        {exportOverlay}
       </div>
     );
   }
@@ -213,7 +179,7 @@ export function ReportView({
     : `Structured roadmap to help you clear at Level ${target}`;
 
   // Inactive panels stay in the DOM but hidden, so printing and PDF export include every section.
-  const panel = (id: TabId) => `${tab === id || exporting ? "" : "hidden"} print:block`;
+  const panel = (id: TabId) => `${tab === id ? "" : "hidden"} print:block`;
 
   return (
     <div className="space-y-8">
@@ -221,12 +187,12 @@ export function ReportView({
         createPortal(
           <div className="flex items-center gap-3">
             {rawButton}
-            {printButton}
+            {markdownButton}
           </div>,
           slot,
         )}
 
-      <div ref={rootRef} className="space-y-8">
+      <div className="space-y-8">
       <ReportHero interview={interview} competency={competency} name={name} email={email} focusCount={focusCount} onOpenPlan={weeks > 0 ? openPlan : undefined} />
 
       <div id="report-tabs" className="no-print scroll-mt-20 border-b border-line">
@@ -281,7 +247,6 @@ export function ReportView({
       </div>
 
       {rawModal}
-      {exportOverlay}
     </div>
   );
 }
