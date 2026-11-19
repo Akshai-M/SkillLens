@@ -21,7 +21,7 @@ export function FeedbackFormButton() {
         className="inline-flex items-center gap-2 text-sm font-medium text-on-brand dark:text-on-brand group-hover/cover:text-on-brand"
       >
         <MessageSquareText aria-hidden className="size-4" />
-        Share feedback
+        Connect with mentor
       </Cover>
       <span className="sr-only">(opens in a new tab)</span>
     </a>
