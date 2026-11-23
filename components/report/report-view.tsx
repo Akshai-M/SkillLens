@@ -272,7 +272,7 @@ function RawDataModal({ interview, onClose }: { interview: Interview; onClose: (
         onClick={(e) => e.stopPropagation()}
         className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-lg border border-line bg-white shadow-xl"
       >
-        <div className="flex items-center justify-between border-b border-line px-6 py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-line px-4 py-4 sm:px-6">
           <div>
             <h3 id="raw-title" className="font-display text-base font-semibold">
               Interview Evaluation JSON Inspector
@@ -283,7 +283,7 @@ function RawDataModal({ interview, onClose }: { interview: Interview; onClose: (
             <Icon name="close" />
           </Button>
         </div>
-        <div className="flex flex-1 flex-col overflow-hidden p-6">
+        <div className="flex flex-1 flex-col overflow-hidden p-4 sm:p-6">
           <div className="flex items-center justify-between pb-2 font-mono text-xs text-subtle">
             <span>Payload Preview</span>
             <CopyButton text={json} label="Copy JSON" />
